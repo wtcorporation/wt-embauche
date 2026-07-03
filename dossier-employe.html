@@ -276,8 +276,8 @@ class Component extends DCLogic {
   loadAssurance(){ try { return JSON.parse(localStorage.getItem('wt_assurance_v1')||'{}'); } catch(e){ return {}; } }
   save(){ try { const f = Object.assign({}, this.state.f); delete f.nas; delete f.transit; delete f.institution; delete f.compte; localStorage.setItem('wt_dossier_v1', JSON.stringify({step:this.state.step, f:f, signature:this.state.signature})); } catch(e){} }
 
-  componentDidUpdate(prevProps, prevState){
-    if (prevState.f !== this.state.f || prevState.step !== this.state.step || prevState.signature !== this.state.signature) this.save();
+  componentDidUpdate(){
+    this.save();
   }
 
   scrollTop(){ try { window.scrollTo({top:0,behavior:'smooth'}); } catch(e){ window.scrollTo(0,0); } }

@@ -358,8 +358,8 @@ class Component extends DCLogic {
   load(){ try { return JSON.parse(localStorage.getItem('wt_documents_v1')||'{}'); } catch(e){ return {}; } }
   save(){ if (this.__finalCleared) return; try { localStorage.setItem('wt_documents_v1', JSON.stringify({step:this.state.step, f:this.state.f, signatures:this.state.signatures, perDoc:this.state.perDoc})); } catch(e){} }
 
-  componentDidUpdate(prevProps, prevState){
-    if (prevState.f !== this.state.f || prevState.step !== this.state.step || prevState.signatures !== this.state.signatures || prevState.perDoc !== this.state.perDoc) this.save();
+  componentDidUpdate(){
+    this.save();
   }
 
   scrollTop(){ try { window.scrollTo({top:0,behavior:'smooth'}); } catch(e){ window.scrollTo(0,0); } }
