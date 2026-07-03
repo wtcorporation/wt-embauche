@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Embauche — Partie 3 · Documents à signer — WT Corporation</title>
+<script src="./config.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700;800&family=Nunito+Sans:opsz,wght@6..12,400;6..12,500;6..12,600;6..12,700&display=swap" rel="stylesheet" />
+  <style>
+    *{box-sizing:border-box}
+    html,body{margin:0}
+    body{background:#f2efe8;font-family:'Nunito Sans',system-ui,sans-serif;color:#22252b;-webkit-font-smoothing:antialiased}
+    input,select,textarea{width:100%;padding:13px 15px;font-family:'Nunito Sans',system-ui,sans-serif;font-size:16px;color:#22252b;background:#fff;border:1.6px solid #e4e1da;border-radius:12px;outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none;appearance:none}
+    textarea{min-height:80px;resize:vertical;line-height:1.5}
+    input:focus,select:focus,textarea:focus{border-color:var(--accent,#d9682f);box-shadow:0 0 0 4px var(--accent-soft,#fdeadd)}
+    input::placeholder,textarea::placeholder{color:#a9a69d}
+    input[type=date]{min-height:49px}
+    label{display:block;font-family:'Figtree',sans-serif;font-weight:600;font-size:14.5px;color:#3a3e45;margin-bottom:7px}
+    input[type=checkbox]{width:23px;height:23px;min-width:23px;padding:0;border-radius:6px;accent-color:var(--accent,#d9682f);cursor:pointer;box-shadow:none}
+  </style>
+</helmet>
+<div style="--accent:{{ accentMain }};--accent-soft:{{ accentSoft }};min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:0 16px 48px">
+
+  <header style="width:100%;max-width:640px;display:flex;align-items:center;gap:14px;padding:20px 4px 18px">
+    <img src="assets/logo-wt.png" alt="WT Corporation" style="height:34px;width:auto;object-fit:contain" />
+    <div style="width:1px;height:26px;background:#d6d2c9"></div>
+    <span style="font-family:'Figtree',sans-serif;font-weight:700;font-size:14px;color:#5c626b;letter-spacing:.2px">Groupe WT Corporation</span>
+  </header>
+
+  <sc-if value="{{ modeApercu }}" hint-placeholder-val="">
+    <div style="width:100%;max-width:640px;display:flex;align-items:center;gap:9px;background:#fef6e7;border:1px solid #f2dca5;border-radius:12px;padding:10px 14px;margin-bottom:12px">
+      <span style="font-size:15px;line-height:1">👁️</span>
+      <span style="font-family:'Figtree',sans-serif;font-weight:600;font-size:13px;color:#8a6d2f">Mode aperçu RH — parcourez tous les documents sans validation.</span>
+      <sc-if value="{{ apercuActive }}" hint-placeholder-val=""><button type="button" onClick="{{ exitApercu }}" style="margin-left:auto;border:1px solid #e6cf8f;background:#fff;color:#8a6d2f;font-family:'Figtree',sans-serif;font-weight:700;font-size:12px;border-radius:8px;padding:6px 11px;cursor:pointer;white-space:nowrap;width:auto">Quitter l'aperçu</button></sc-if>
+    </div>
+  </sc-if>
+
+  <main style="width:100%;max-width:640px;background:#fff;border:1px solid #eae7df;border-radius:22px;box-shadow:0 22px 60px -34px rgba(40,36,30,.5);overflow:hidden">
+
+    <sc-if value="{{ showProgress }}" hint-placeholder-val="">
+      <div style="padding:20px 24px 0">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:9px;gap:12px">
+          <span style="font-family:'Figtree',sans-serif;font-weight:700;font-size:13px;color:var(--accent,#d9682f);text-transform:uppercase;letter-spacing:.6px;white-space:nowrap">{{ stepLabel }}</span>
+          <span style="font-family:'Figtree',sans-serif;font-weight:600;font-size:13px;color:#8b8880;text-align:right">{{ stepTitle }}</span>
+        </div>
+        <div style="height:8px;background:#efece4;border-radius:99px;overflow:hidden">
+          <div style="height:100%;width:{{ progressPct }}%;background:var(--accent,#d9682f);border-radius:99px;transition:width .4s cubic-bezier(.4,0,.2,1)"></div>
+        </div>
+      </div>
+    </sc-if>
+
+    <div style="padding:26px 24px 8px">
+
+      <!-- INTRO -->
+      <sc-if value="{{ isIntro }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="display:inline-flex;align-items:center;gap:7px;background:var(--accent-soft,#fdeadd);color:var(--accent,#d9682f);font-family:'Figtree',sans-serif;font-weight:700;font-size:12px;letter-spacing:.4px;text-transform:uppercase;padding:6px 11px;border-radius:99px;margin-bottom:16px">Partie 3 de 3 · Documents à signer</div>
+          <h1 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:26px;line-height:1.2;color:#22252b;margin:0 0 14px;text-wrap:balance">Politiques et documents d'embauche</h1>
+          <sc-if value="{{ hasNom }}" hint-placeholder-val="">
+            <p style="font-size:16.5px;line-height:1.6;color:#4a4f57;margin:0 0 12px">Bonjour <strong>{{ prefilledName }}</strong> — vos informations (nom, adresse, permis, contacts) ont été reprises de votre dossier et sont déjà pré-remplies. Vérifiez-les et signez chaque document.</p>
+          </sc-if>
+          <p style="font-size:16.5px;line-height:1.6;color:#4a4f57;margin:0 0 18px">Vous devez prendre connaissance et signer les <strong>{{ totalDocs }} documents</strong> suivants pour finaliser votre embauche : l'attestation sur le harcèlement, les 10 accusés de réception des politiques, le consentement de vérification, le contact d'urgence et la déclaration de validité de permis.</p>
+          <div style="background:#f4f7fb;border:1px solid #d9e2ef;border-radius:13px;padding:14px 16px;margin-bottom:14px">
+            <p style="margin:0;font-size:13.5px;color:#4a5568;line-height:1.55">🔒 Les renseignements fournis dans ce formulaire sont transmis au département RH de WT Corporation et seront utilisés uniquement pour le traitement de votre dossier d'embauche. Les documents transmis seront sauvegardés dans l'environnement Google Workspace sécurisé de l'entreprise.</p>
+          </div>
+          <div style="display:flex;gap:12px;background:#f6f9f6;border:1px solid #dcebe0;border-radius:14px;padding:14px 16px;margin-bottom:14px">
+            <span style="font-size:18px;line-height:1.3">✍️</span>
+            <p style="margin:0;font-size:14px;line-height:1.55;color:#3d5a48">Chaque document se signe directement à l'écran, avec le doigt ou la souris. Votre progression est sauvegardée automatiquement.</p>
+          </div>
+          <button type="button" onClick="{{ start }}" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:16px 20px;font-family:'Figtree',sans-serif;font-weight:700;font-size:16.5px;color:#fff;background:var(--accent,#d9682f);border:none;border-radius:14px;cursor:pointer;box-shadow:0 10px 22px -10px var(--accent,#d9682f)">{{ startLabel }} <span style="font-size:18px">→</span></button>
+          <sc-if value="{{ hasProgress }}" hint-placeholder-val="">
+            <p style="text-align:center;margin:16px 0 0;font-size:13.5px;color:#9a968d">Une signature en cours a été trouvée. <button type="button" onClick="{{ clearAll }}" style="border:none;background:none;color:var(--accent,#d9682f);font-family:inherit;font-size:13.5px;font-weight:700;text-decoration:underline;cursor:pointer;padding:0;width:auto">Tout recommencer</button></p>
+          </sc-if>
+          <p style="text-align:center;margin:18px 0 0;padding-top:16px;border-top:1px dashed #e4e1da"><button type="button" onClick="{{ enterApercu }}" style="border:none;background:none;color:#8b8880;font-family:'Figtree',sans-serif;font-size:13px;font-weight:700;text-decoration:underline;cursor:pointer;padding:0;width:auto">🔧 Aperçu RH — feuilleter les 14 documents sans rien remplir ni signer</button></p>
+        </div>
+      </sc-if>
+
+      <!-- DOCUMENT HEADER (shared) -->
+      <sc-if value="{{ isDoc }}" hint-placeholder-val="">
+        <div>
+          <p style="font-family:'Figtree',sans-serif;font-weight:700;font-size:12px;color:var(--accent,#d9682f);text-transform:uppercase;letter-spacing:.5px;margin:0 0 6px">{{ docCat }}</p>
+          <h2 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:21px;line-height:1.25;color:#22252b;margin:0 0 6px;text-wrap:balance">{{ docTitle }}</h2>
+          <sc-if value="{{ docSub }}" hint-placeholder-val=""><p style="font-size:14.5px;color:#6b6f77;margin:0 0 18px;line-height:1.5">{{ docSub }}</p></sc-if>
+
+          <!-- ATTESTATION HARCÈLEMENT -->
+          <sc-if value="{{ isAttestation }}" hint-placeholder-val="">
+            <div>
+              <div style="display:flex;gap:12px;flex-wrap:wrap">
+                <div style="flex:1;min-width:160px;margin-bottom:16px"><label>Entreprise</label><input type="text" name="entreprise" value="{{ f.entreprise }}" onChange="{{ onField }}" /></div>
+                <div style="flex:1;min-width:160px;margin-bottom:16px"><label>Département</label><input type="text" name="departement" value="{{ f.departement }}" onChange="{{ onField }}" /></div>
+              </div>
+              <div style="background:#fbfaf7;border:1px solid #eae7df;border-radius:14px;padding:16px 18px;margin-bottom:20px;font-size:14.5px;line-height:1.65;color:#3f434b">
+                <p style="margin:0 0 10px">Je, soussigné(e), confirme avoir été informé(e) et sensibilisé(e) par mon gestionnaire concernant l'importance du respect en milieu de travail, ainsi que sur la prévention de l'intimidation, du harcèlement psychologique et du harcèlement sexuel.</p>
+                <p style="margin:0 0 10px">Je confirme avoir pris connaissance que l'entreprise ne tolère aucune forme de comportement intimidant, humiliant, menaçant, discriminatoire, déplacé ou à caractère sexuel inapproprié, envers un collègue, un gestionnaire, un client, un fournisseur ou toute autre personne liée à l'environnement de travail.</p>
+                <p style="margin:0 0 10px">Je comprends que chaque employé a la responsabilité de contribuer à maintenir un milieu de travail sain, sécuritaire, professionnel et respectueux, et que toute situation d'intimidation, de harcèlement ou d'inconfort peut être signalée à mon gestionnaire ou à la direction sans crainte de représailles.</p>
+                <p style="margin:0">Je confirme avoir reçu les explications nécessaires, avoir eu l'occasion de poser mes questions et comprendre les attentes de l'entreprise à ce sujet.</p>
+              </div>
+              <div style="display:flex;gap:12px;flex-wrap:wrap">
+                <div style="flex:1;min-width:150px;margin-bottom:16px"><label>Prénom de l'employé(e)</label><input type="text" name="prenom" value="{{ f.prenom }}" onChange="{{ onField }}" /></div>
+                <div style="flex:1;min-width:150px;margin-bottom:16px"><label>Nom de l'employé(e)</label><input type="text" name="nom" value="{{ f.nom }}" onChange="{{ onField }}" /></div>
+              </div>
+              <div style="margin-bottom:16px"><label>Poste</label><input type="text" name="poste" value="{{ f.poste }}" onChange="{{ onField }}" /></div>
+            </div>
+          </sc-if>
+
+          <!-- ACCUSÉ DE RÉCEPTION -->
+          <sc-if value="{{ isAccuse }}" hint-placeholder-val="">
+            <div>
+              <div style="background:#fbfaf7;border:1px solid #eae7df;border-radius:14px;padding:16px 18px;margin-bottom:20px;font-size:14.5px;line-height:1.65;color:#3f434b">
+                <p style="margin:0 0 8px">Je, soussigné(e), reconnais avoir reçu l'information de la présente politique, avoir été informé(e) des conséquences du non-respect de celle-ci, et avoir pris connaissance des objectifs, des procédures ainsi que des sanctions s'y rattachant.</p>
+                <sc-if value="{{ docExtra }}" hint-placeholder-val=""><p style="margin:0 0 8px">Je m'engage également à informer Fadhel Khalfallah, Alycia Couillard Després et les gestionnaires de tout incident ou accident impliquant l'un de leurs véhicules, dans le plus bref délai possible.</p></sc-if>
+                <p style="margin:0">Je m'engage sur mon honneur et dans la mesure du possible à respecter cette politique.</p>
+                <sc-if value="{{ docNb }}" hint-placeholder-val=""><p style="margin:12px 0 0;font-size:13px;color:#8a6d2f;font-style:italic">N.B. — {{ docNb }}</p></sc-if>
+              </div>
+              <div style="display:flex;gap:12px;flex-wrap:wrap">
+                <div style="flex:1;min-width:150px;margin-bottom:16px"><label>Prénom</label><input type="text" name="prenom" value="{{ f.prenom }}" onChange="{{ onField }}" /><sc-if value="{{ e.prenom }}" hint-placeholder-val=""><p style="margin:6px 0 0;font-size:13px;color:#c0392b">{{ e.prenom }}</p></sc-if></div>
+                <div style="flex:1;min-width:150px;margin-bottom:16px"><label>Nom</label><input type="text" name="nom" value="{{ f.nom }}" onChange="{{ onField }}" /><sc-if value="{{ e.nom }}" hint-placeholder-val=""><p style="margin:6px 0 0;font-size:13px;color:#c0392b">{{ e.nom }}</p></sc-if></div>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- CONSENTEMENT PLUMITIF -->
+          <sc-if value="{{ isConsentement }}" hint-placeholder-val="">
+            <div>
+              <div style="display:flex;gap:12px;flex-wrap:wrap">
+                <div style="flex:1;min-width:150px;margin-bottom:16px"><label>Prénom</label><input type="text" name="prenom" value="{{ f.prenom }}" onChange="{{ onField }}" /></div>
+                <div style="flex:1;min-width:150px;margin-bottom:16px"><label>Nom</label><input type="text" name="nom" value="{{ f.nom }}" onChange="{{ onField }}" /></div>
+              </div>
+              <div style="margin-bottom:18px"><label>Numéro de téléphone</label><input type="tel" name="telephone" value="{{ f.telephone }}" onChange="{{ onField }}" /></div>
+              <div style="background:#fbfaf7;border:1px solid #eae7df;border-radius:14px;padding:16px 18px;margin-bottom:20px;font-size:14px;line-height:1.65;color:#3f434b">
+                <p style="margin:0 0 10px">Par la présente, j'autorise le gestionnaire de l'entreprise, ses mandataires ou représentants, à obtenir, vérifier et partager tout renseignement personnel ou confidentiel me concernant, incluant sans s'y limiter : le plumitif criminel, le plumitif civil, les dossiers CNESST, les informations SAAQ relatives au permis et aux événements de conduite, les références d'anciens employeurs et toute base de données gouvernementale requise pour confirmer mon admissibilité à l'emploi.</p>
+                <p style="margin:0 0 10px">Je comprends que mon consentement est nécessaire, libre et éclairé. Il demeure valide tant que je serai à l'emploi de l'entreprise, sauf révocation écrite de ma part. J'autorise également l'entreprise ou ses mandataires à communiquer avec mon employeur actuel dans le cadre des vérifications professionnelles jugées nécessaires.</p>
+                <p style="margin:0">Toute demande faite en vertu de la présente doit être considérée comme provenant directement de moi, conformément aux lois en vigueur dont l'article 36 de la Loi sur les accidents du travail et les maladies professionnelles.</p>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- CONTACT D'URGENCE -->
+          <sc-if value="{{ isUrgence }}" hint-placeholder-val="">
+            <div>
+              <div style="display:flex;gap:12px;flex-wrap:wrap">
+                <div style="flex:2;min-width:180px;margin-bottom:16px"><label>Nom de l'employé</label><input type="text" name="uNomEmploye" value="{{ f.uNomEmploye }}" onChange="{{ onField }}" /></div>
+                <div style="flex:1;min-width:140px;margin-bottom:16px"><label>Poste</label><input type="text" name="uPoste" value="{{ f.uPoste }}" onChange="{{ onField }}" /></div>
+              </div>
+              <div style="margin-bottom:20px"><label>Téléphone</label><input type="tel" name="uTel" value="{{ f.uTel }}" onChange="{{ onField }}" /></div>
+
+              <div style="background:#fbfaf7;border:1px solid #eae7df;border-radius:14px;padding:16px 18px;margin-bottom:16px">
+                <p style="font-family:'Figtree',sans-serif;font-weight:700;font-size:14px;color:#3a3e45;margin:0 0 12px">Contact d'urgence 1 <span style="color:var(--accent)">*</span></p>
+                <div style="display:flex;gap:12px;flex-wrap:wrap">
+                  <div style="flex:1;min-width:150px;margin-bottom:12px"><label>Nom</label><input type="text" name="u1Nom" value="{{ f.u1Nom }}" onChange="{{ onField }}" /><sc-if value="{{ e.u1Nom }}" hint-placeholder-val=""><p style="margin:6px 0 0;font-size:13px;color:#c0392b">{{ e.u1Nom }}</p></sc-if></div>
+                  <div style="flex:1;min-width:150px;margin-bottom:12px"><label>Relation</label><input type="text" name="u1Rel" value="{{ f.u1Rel }}" onChange="{{ onField }}" /></div>
+                </div>
+                <div style="display:flex;gap:12px;flex-wrap:wrap">
+                  <div style="flex:1;min-width:150px"><label>Téléphone</label><input type="tel" name="u1Tel" value="{{ f.u1Tel }}" onChange="{{ onField }}" /><sc-if value="{{ e.u1Tel }}" hint-placeholder-val=""><p style="margin:6px 0 0;font-size:13px;color:#c0392b">{{ e.u1Tel }}</p></sc-if></div>
+                  <div style="flex:1;min-width:150px"><label>Adresse</label><input type="text" name="u1Adr" value="{{ f.u1Adr }}" onChange="{{ onField }}" /></div>
+                </div>
+              </div>
+
+              <div style="background:#fbfaf7;border:1px solid #eae7df;border-radius:14px;padding:16px 18px;margin-bottom:8px">
+                <p style="font-family:'Figtree',sans-serif;font-weight:700;font-size:14px;color:#3a3e45;margin:0 0 12px">Contact d'urgence 2 <span style="color:#a9a69d;font-weight:600">(facultatif)</span></p>
+                <div style="display:flex;gap:12px;flex-wrap:wrap">
+                  <div style="flex:1;min-width:150px;margin-bottom:12px"><label>Nom</label><input type="text" name="u2Nom" value="{{ f.u2Nom }}" onChange="{{ onField }}" /></div>
+                  <div style="flex:1;min-width:150px;margin-bottom:12px"><label>Relation</label><input type="text" name="u2Rel" value="{{ f.u2Rel }}" onChange="{{ onField }}" /></div>
+                </div>
+                <div style="display:flex;gap:12px;flex-wrap:wrap">
+                  <div style="flex:1;min-width:150px"><label>Téléphone</label><input type="tel" name="u2Tel" value="{{ f.u2Tel }}" onChange="{{ onField }}" /></div>
+                  <div style="flex:1;min-width:150px"><label>Adresse</label><input type="text" name="u2Adr" value="{{ f.u2Adr }}" onChange="{{ onField }}" /></div>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- DÉCLARATION VALIDITÉ PERMIS -->
+          <sc-if value="{{ isPermis }}" hint-placeholder-val="">
+            <div>
+              <div style="margin-bottom:16px"><label>Nom du conducteur</label><input type="text" name="nomConducteur" value="{{ f.nomConducteur }}" onChange="{{ onField }}" /></div>
+              <div style="margin-bottom:20px"><label>Nom de l'entreprise</label><input type="text" name="entreprise" value="{{ f.entreprise }}" onChange="{{ onField }}" /></div>
+              <div style="background:#f4f6fb;border:1px solid #d9e2f2;border-radius:14px;padding:16px 18px;margin-bottom:16px;font-size:13.5px;line-height:1.6;color:#3a4a63">
+                <p style="margin:0 0 10px"><strong>Obligation du conducteur (Csr, art. 519.7).</strong> Tout conducteur dont le permis ou la classe autorisant la conduite d'un véhicule lourd a été modifié, suspendu ou révoqué est tenu d'en informer sans délai l'exploitant et le propriétaire.</p>
+                <p style="margin:0">Le propriétaire ou l'exploitant qui laisse circuler un véhicule alors qu'il sait le permis modifié, suspendu ou révoqué est passible d'une amende de 700 $ à 2 100 $ (art. 519.42). Le conducteur qui n'informe pas le propriétaire est passible d'une amende de 350 $ à 1 050 $ (art. 519.50).</p>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- SIGNATURE PRINCIPALE -->
+          <div style="margin-top:8px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px"><label style="margin:0">{{ sigLabelA }} <span style="color:var(--accent)">*</span></label><button type="button" onClick="{{ clearA }}" style="border:none;background:none;color:#8b8880;font-family:'Figtree',sans-serif;font-size:13px;font-weight:600;text-decoration:underline;cursor:pointer;padding:0;width:auto">Effacer</button></div>
+            <canvas ref="{{ sigRefA }}" style="width:100%;height:150px;background:#fff;border:1.6px solid #e4e1da;border-radius:12px;display:block;touch-action:none;cursor:crosshair"></canvas>
+            <sc-if value="{{ e.sig }}" hint-placeholder-val=""><p style="margin:6px 0 0;font-size:13px;color:#c0392b">{{ e.sig }}</p></sc-if>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:14px">
+            <div style="flex:1;min-width:150px"><label>Date</label><input type="date" name="date" value="{{ dateVal }}" onChange="{{ onPerDoc }}" /></div>
+          </div>
+
+          <!-- SIGNATURE SECONDAIRE (gestionnaire / représentant) -->
+          <sc-if value="{{ hasSecondSig }}" hint-placeholder-val="">
+            <div style="margin-top:20px;padding-top:18px;border-top:1px dashed #e4e1da">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px"><label style="margin:0">{{ sigLabelB }} <span style="color:#a9a69d;font-weight:600">(RH)</span></label><button type="button" onClick="{{ clearB }}" style="border:none;background:none;color:#8b8880;font-family:'Figtree',sans-serif;font-size:13px;font-weight:600;text-decoration:underline;cursor:pointer;padding:0;width:auto">Effacer</button></div>
+              <sc-if value="{{ isAttestation }}" hint-placeholder-val="">
+                <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+                  <div style="flex:1;min-width:150px"><label>Nom du gestionnaire</label><input type="text" name="nomGestionnaire" value="{{ f.nomGestionnaire }}" onChange="{{ onField }}" /></div>
+                  <div style="flex:1;min-width:150px"><label>Poste</label><input type="text" name="posteGestionnaire" value="{{ f.posteGestionnaire }}" onChange="{{ onField }}" /></div>
+                </div>
+              </sc-if>
+              <canvas ref="{{ sigRefB }}" style="width:100%;height:130px;background:#fff;border:1.6px solid #e4e1da;border-radius:12px;display:block;touch-action:none;cursor:crosshair"></canvas>
+            </div>
+          </sc-if>
+
+          <!-- BLOC RH (témoin / transmis / initiales) -->
+          <sc-if value="{{ hasRHBlock }}" hint-placeholder-val="">
+            <div style="margin-top:20px;background:#f0f1f4;border:1px solid #d7dae1;border-radius:14px;padding:15px 16px">
+              <p style="font-family:'Figtree',sans-serif;font-weight:700;font-size:12px;color:#4a4f57;text-transform:uppercase;letter-spacing:.4px;margin:0 0 12px">🔧 Réservé aux RH</p>
+              <div style="display:flex;gap:12px;flex-wrap:wrap">
+                <div style="flex:2;min-width:180px;margin-bottom:12px"><label>Témoin de la signature</label><input type="text" name="temoin" value="{{ pd.temoin }}" onChange="{{ onPerDoc }}" /></div>
+                <div style="flex:1;min-width:120px;margin-bottom:12px"><label>Transmis le</label><input type="date" name="transmisLe" value="{{ pd.transmisLe }}" onChange="{{ onPerDoc }}" /></div>
+              </div>
+              <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+                <div style="flex:1;min-width:150px"><label>Initiales du responsable</label><input type="text" name="initiales" value="{{ pd.initiales }}" onChange="{{ onPerDoc }}" /></div>
+                <label style="display:flex;gap:9px;align-items:center;font-family:'Nunito Sans',sans-serif;font-weight:400;font-size:14px;color:#3a3e45;margin:22px 0 0;cursor:pointer;flex:1;min-width:150px"><input type="checkbox" name="copieDossier" checked="{{ pd.copieDossier }}" onChange="{{ onPerDoc }}" style="width:20px;height:20px;min-width:20px" /><span>Copie au dossier conducteur</span></label>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- CONFIRMATION -->
+      <sc-if value="{{ isConfirm }}" hint-placeholder-val="">
+        <div>
+          <sc-if value="{{ isSending }}" hint-placeholder-val="">
+            <div style="text-align:center;padding:34px 4px 30px">
+              <div style="width:74px;height:74px;border-radius:50%;background:#fdf4ec;border:2px solid #f4dcc7;display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 20px">⏳</div>
+              <h1 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:22px;color:#22252b;margin:0 0 10px">Envoi en cours…</h1>
+              <p style="font-size:15px;line-height:1.6;color:#4a4f57;margin:0 auto;max-width:420px">Vos documents signés sont en cours de transmission au département RH. Ne fermez pas cette page.</p>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isSendError }}" hint-placeholder-val="">
+            <div style="text-align:center;padding:24px 4px 20px">
+              <div style="width:74px;height:74px;border-radius:50%;background:#fdecea;border:2px solid #f0c4be;display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 20px">⚠️</div>
+              <h1 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:22px;color:#22252b;margin:0 0 10px">L'envoi a échoué</h1>
+              <p style="font-size:15px;line-height:1.6;color:#b23b32;margin:0 auto 20px;max-width:440px">{{ sendError }}</p>
+              <div style="display:flex;flex-direction:column;gap:12px;max-width:360px;margin:0 auto">
+                <button type="button" onClick="{{ retrySend }}" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:15px 20px;font-family:'Figtree',sans-serif;font-weight:700;font-size:15.5px;color:#fff;background:var(--accent,#d9682f);border:none;border-radius:13px;cursor:pointer">↻ Réessayer l'envoi</button>
+                <button type="button" onClick="{{ downloadCopy }}" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:15px 20px;font-family:'Figtree',sans-serif;font-weight:700;font-size:15.5px;color:#4a4f57;background:#fff;border:1.6px solid #e0ddd6;border-radius:13px;cursor:pointer">📄 Télécharger une copie de secours</button>
+              </div>
+              <p style="font-size:13px;color:#8b8880;margin:16px auto 0;max-width:420px">Vos réponses sont conservées sur cet appareil : rien n'est perdu. Si le problème persiste, contactez rh@wtcorporation.ca.</p>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isSent }}" hint-placeholder-val="">
+          <div>
+          <div style="text-align:center;padding:8px 4px 4px">
+            <div style="width:74px;height:74px;border-radius:50%;background:#eaf6ef;border:2px solid #bfe3cd;display:flex;align-items:center;justify-content:center;font-size:38px;margin:0 auto 18px">✓</div>
+            <h1 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:24px;color:#22252b;margin:0 0 12px">Documents signés ✓</h1>
+            <p style="font-size:16px;line-height:1.6;color:#4a4f57;margin:0 auto 10px;max-width:440px">Merci. Votre dossier d'embauche a été transmis au département RH de WT Corporation.</p>
+            <sc-if value="{{ submissionId }}" hint-placeholder-val=""><p style="font-size:13px;color:#8b8880;margin:0 auto 22px">N° de confirmation : <strong>{{ submissionId }}</strong></p></sc-if>
+          </div>
+          <div style="border:1px solid #eae7df;border-radius:14px;overflow:hidden;margin-bottom:22px">
+            <sc-for list="{{ docsView }}" as="d" hint-placeholder-count="14">
+              <div style="display:flex;align-items:center;gap:12px;padding:12px 15px;border-bottom:1px solid #f2efe8">
+                <span style="width:24px;height:24px;min-width:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;background:{{ d.badgeBg }};color:{{ d.badgeColor }}">{{ d.mark }}</span>
+                <span style="font-size:14px;color:#3a3e45;line-height:1.4">{{ d.title }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px;max-width:380px;margin:0 auto">
+            <button type="button" onClick="{{ downloadCopy }}" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:15px 20px;font-family:'Figtree',sans-serif;font-weight:700;font-size:15.5px;color:#fff;background:var(--accent,#d9682f);border:none;border-radius:13px;cursor:pointer">📄 Télécharger le dossier PDF</button>
+            <button type="button" onClick="{{ goHome }}" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:15px 20px;font-family:'Figtree',sans-serif;font-weight:700;font-size:15.5px;color:#4a4f57;background:#fff;border:1.6px solid #e0ddd6;border-radius:13px;cursor:pointer">Retour à l'accueil</button>
+          </div>
+          </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+    </div>
+
+    <sc-if value="{{ showNav }}" hint-placeholder-val="">
+      <div style="display:flex;gap:12px;padding:14px 24px 22px;border-top:1px solid #f0ede6;background:#fff;position:sticky;bottom:0">
+        <sc-if value="{{ showPrev }}" hint-placeholder-val="{{ true }}">
+          <button type="button" onClick="{{ prev }}" style="flex:0 0 auto;padding:15px 22px;font-family:'Figtree',sans-serif;font-weight:700;font-size:15.5px;color:#4a4f57;background:#fff;border:1.6px solid #e0ddd6;border-radius:13px;cursor:pointer">← Précédent</button>
+        </sc-if>
+        <button type="button" onClick="{{ next }}" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:15px 22px;font-family:'Figtree',sans-serif;font-weight:700;font-size:15.5px;color:#fff;background:var(--accent,#d9682f);border:none;border-radius:13px;cursor:pointer;box-shadow:0 8px 18px -9px var(--accent,#d9682f)">{{ nextLabel }}</button>
+      </div>
+    </sc-if>
+  </main>
+
+  <p style="max-width:640px;width:100%;text-align:center;font-size:12px;color:#9a968d;margin:18px auto 0;line-height:1.5">Politiques et procédures de Remorquage PDR 2011 inc., Livraison Primus, Service de Remorquage Bean & Filles, 9453-6968 Qc inc. · Groupe WT Corporation.<sc-if value="{{ savedIndicator }}" hint-placeholder-val=""><br /><span style="color:#7ea88c;font-weight:600">✓ Vos réponses sont sauvegardées automatiquement sur cet appareil.</span></sc-if></p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;660px&quot;,&quot;height&quot;:&quot;820px&quot;},&quot;accentTheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Chaleureux (orange terracotta)&quot;,&quot;options&quot;:[&quot;Chaleureux (orange terracotta)&quot;,&quot;Corporatif (bleu profond)&quot;,&quot;Sobre (vert forêt)&quot;,&quot;Industriel (graphite)&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Apparence&quot;},&quot;modeApercu&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Aperçu RH&quot;},&quot;googleScriptUrl&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Déploiement&quot;,&quot;label&quot;:&quot;URL du script Google (envoi RH)&quot;}}">
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this.docs = this.buildDocs();
+    const saved = this.load();
+    const a = this.readStore('wt_assurance_v1');
+    const d = this.readStore('wt_dossier_v1');
+    this.state = {
+      step: (typeof saved.step === 'number') ? saved.step : 0,
+      f: Object.assign(this.prefill(a, d), saved.f || {}),
+      signatures: saved.signatures || {},
+      perDoc: saved.perDoc || {},
+      errors: {},
+      apercu: false,
+      sendState: null,
+      sendError: null,
+      submissionId: '',
+    };
+    if ((typeof saved.step === 'number') && saved.step === this.docs.length + 1) this.state.sendState = 'sent';
+    this.hadProgress = !!(saved.signatures && Object.keys(saved.signatures).length) || (typeof saved.step === 'number' && saved.step > 0);
+    this.sigPads = {};
+    this._sigRefCache = {};
+  }
+
+  buildDocs(){
+    return [
+      {id:'harcelement', type:'attestation', cat:'Prévention et respect en milieu de travail', title:'Attestation de prise de connaissance', sub:'Intimidation, harcèlement psychologique et harcèlement sexuel en milieu de travail'},
+      {id:'p1', type:'accuse', num:1, cat:'Accusé de réception · Politique 1 de 10', title:'Conduite de nos véhicules lourds et en cas d\u2019accident', extra:true},
+      {id:'p2', type:'accuse', num:2, cat:'Accusé de réception · Politique 2 de 10', title:'Vérification avant départ'},
+      {id:'p3', type:'accuse', num:3, cat:'Accusé de réception · Politique 3 de 10', title:'Heures de conduite et de travail'},
+      {id:'p4', type:'accuse', num:4, cat:'Accusé de réception · Politique 4 de 10', title:'Normes d\u2019arrimage'},
+      {id:'p5', type:'accuse', num:5, cat:'Accusé de réception · Politique 5 de 10', title:'Transport des marchandises dangereuses'},
+      {id:'p6', type:'accuse', num:6, cat:'Accusé de réception · Politique 6 de 10', title:'Normes de charges et de dimensions'},
+      {id:'p7', type:'accuse', num:7, cat:'Accusé de réception · Politique 7 de 10', title:'Alcool, stupéfiants et cannabis'},
+      {id:'p8', type:'accuse', num:8, cat:'Accusé de réception · Politique 8 de 10', title:'Programme d\u2019entretien préventif', nb:'Cette politique s\u2019adresse au personnel responsable de l\u2019entretien mécanique des véhicules.'},
+      {id:'p9', type:'accuse', num:9, cat:'Accusé de réception · Politique 9 de 10', title:'Conformité et gestion des interceptions et des infractions'},
+      {id:'p10', type:'accuse', num:10, cat:'Accusé de réception · Politique 10 de 10', title:'Non-respect de la vitesse permise'},
+      {id:'plumitif', type:'consentement', cat:'Consentement', title:'Vérification Plumitif et dossiers', sub:'Autorisation de vérification (plumitif, SAAQ, CNESST, références)'},
+      {id:'urgence', type:'urgence', cat:'Renseignements', title:'Formulaire de contact d\u2019urgence'},
+      {id:'permis', type:'permis', cat:'Déclaration', title:'Déclaration de validité de permis de conduire'},
+    ];
+  }
+
+  readStore(k){ try { return JSON.parse(localStorage.getItem(k)||'{}'); } catch(e){ return {}; } }
+
+  prefill(a, d){
+    const af = (a && a.f) || {};
+    const df = (d && d.f) || {};
+    const nomComplet = ((af.prenom||'') + ' ' + (af.nom||'')).trim();
+    return {
+      nom: af.nom||'', prenom: af.prenom||'', telephone: af.telephone||'', courriel: af.courriel||'',
+      adresse: af.adresse||'', ville: af.ville||'', codePostal: af.codePostal||'', dateNaissance: af.dateNaissance||'',
+      poste: af.poste||'', entreprise: (af.compagnie==='Autre'?af.compagnieAutre:af.compagnie)||'', departement: (af.departement==='Autre'?af.departementAutre:af.departement)||'',
+      permisNumero: af.permisNumero||'', permisClasse: (af.permisClasse==='Autre'?af.permisClasseAutre:af.permisClasse)||'', permisExpiration: af.permisExpiration||'',
+      nomGestionnaire:'', posteGestionnaire:'',
+      nomConducteur: nomComplet,
+      uNomEmploye: nomComplet, uPoste: af.poste||'', uTel: af.telephone||'',
+      u1Nom: df.urgenceNom||'', u1Rel: df.urgenceLien||'', u1Tel: df.urgenceTel||'', u1Adr:'',
+      u2Nom:'', u2Rel:'', u2Tel: df.urgenceTel2||'', u2Adr:'',
+    };
+  }
+
+  load(){ try { return JSON.parse(localStorage.getItem('wt_documents_v1')||'{}'); } catch(e){ return {}; } }
+  save(){ if (this.__finalCleared) return; try { localStorage.setItem('wt_documents_v1', JSON.stringify({step:this.state.step, f:this.state.f, signatures:this.state.signatures, perDoc:this.state.perDoc})); } catch(e){} }
+
+  componentDidUpdate(prevProps, prevState){
+    if (prevState.f !== this.state.f || prevState.step !== this.state.step || prevState.signatures !== this.state.signatures || prevState.perDoc !== this.state.perDoc) this.save();
+  }
+
+  scrollTop(){ try { window.scrollTo({top:0,behavior:'smooth'}); } catch(e){ window.scrollTo(0,0); } }
+  todayISO(){ try { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); } catch(e){ return ''; } }
+
+  totalSteps(){ return this.docs.length + 1; }
+  currentDoc(){ const s=this.state.step; return (s>=1 && s<=this.docs.length) ? this.docs[s-1] : null; }
+
+  onField = (e) => {
+    const {name, value} = e.target;
+    this.setState(s => ({ f: {...s.f, [name]: value}, errors: {...s.errors, [name]: undefined, sig: s.errors.sig} }));
+  };
+  onPerDoc = (e) => {
+    const d = this.currentDoc(); if(!d) return;
+    const t = e.target;
+    const val = (t.type === 'checkbox') ? t.checked : t.value;
+    this.setState(s => ({ perDoc: {...s.perDoc, [d.id]: {...(s.perDoc[d.id]||{}), [t.name]: val}} }));
+  };
+
+  // ----- Multi-signature -----
+  getSigRef(key){ if(!this._sigRefCache[key]) this._sigRefCache[key] = (el)=>this.mountSig(key, el); return this._sigRefCache[key]; }
+  mountSig(key, el){
+    if(!el) return;
+    const pad = this.sigPads[key] || (this.sigPads[key]={});
+    const dpr = window.devicePixelRatio || 1;
+    const rect = el.getBoundingClientRect();
+    el.width = Math.max(1, Math.round(rect.width*dpr));
+    el.height = Math.max(1, Math.round(rect.height*dpr));
+    const ctx = el.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.lineWidth = 2.4; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle='#22252b';
+    pad.canvas = el; pad.ctx = ctx; pad.w = rect.width; pad.h = rect.height; pad.drawing = false;
+    const pos = (ev)=>{ const r=el.getBoundingClientRect(); const t=ev.touches?ev.touches[0]:ev; return {x:t.clientX-r.left, y:t.clientY-r.top}; };
+    el.onpointerdown = (ev)=>{ ev.preventDefault(); pad.drawing=true; const p=pos(ev); ctx.beginPath(); ctx.moveTo(p.x,p.y); try{ el.setPointerCapture(ev.pointerId); }catch(e){} };
+    el.onpointermove = (ev)=>{ if(!pad.drawing) return; ev.preventDefault(); const p=pos(ev); ctx.lineTo(p.x,p.y); ctx.stroke(); };
+    const end = ()=>{ if(!pad.drawing) return; pad.drawing=false; try{ const data=el.toDataURL('image/png'); this.setState(s=>({signatures:{...s.signatures,[key]:data}, errors:{...s.errors, sig:undefined}})); }catch(e){} };
+    el.onpointerup = end; el.onpointercancel = end; el.onpointerleave = end;
+    const stored = this.state.signatures[key];
+    if(stored){ const img=new Image(); img.onload=()=>{ ctx.clearRect(0,0,pad.w,pad.h); ctx.drawImage(img,0,0,pad.w,pad.h); }; img.src=stored; }
+  }
+  clearSig(key){
+    const pad=this.sigPads[key];
+    if(pad && pad.ctx && pad.canvas){ pad.ctx.clearRect(0,0,pad.canvas.width,pad.canvas.height); }
+    this.setState(s=>{ const n={...s.signatures}; delete n[key]; return {signatures:n}; });
+  }
+
+  sigKeys(d){
+    if(!d) return {};
+    if(d.type==='attestation') return {a:'harcelement_emp', b:'harcelement_mgr', la:'Signature de l\u2019employé(e)', lb:'Signature du gestionnaire'};
+    if(d.type==='accuse') return {a:d.id+'_emp', la:'Signature de l\u2019employé(e)'};
+    if(d.type==='consentement') return {a:'plumitif_cand', b:'plumitif_mgr', la:'Signature du candidat', lb:'Signature du gestionnaire'};
+    if(d.type==='permis') return {a:'permis_cond', b:'permis_rep', la:'Signature du conducteur', lb:'Signature du représentant'};
+    return {};
+  }
+
+  validateDoc(d){
+    const errs={}; const f=this.state.f; const k=this.sigKeys(d);
+    if(d.type==='accuse'){ if(!f.prenom||!f.prenom.trim()) errs.prenom='Requis.'; if(!f.nom||!f.nom.trim()) errs.nom='Requis.'; }
+    if(d.type==='urgence'){ if(!f.u1Nom||!f.u1Nom.trim()) errs.u1Nom='Requis.'; if(!f.u1Tel||!f.u1Tel.trim()) errs.u1Tel='Requis.'; return errs; }
+    if(k.a && !this.state.signatures[k.a]) errs.sig='Votre signature est requise pour continuer.';
+    return errs;
+  }
+
+  isApercu(){ return !!this.props.modeApercu || !!this.state.apercu; }
+  enterApercu = () => { this.setState({ apercu:true, step:1, errors:{} }); this.scrollTop(); };
+  exitApercu = () => { this.setState({ apercu:false, step:0, errors:{} }); this.scrollTop(); };
+
+  next = () => {
+    const d = this.currentDoc();
+    if(!this.isApercu() && d){
+      const errs = this.validateDoc(d);
+      if(Object.keys(errs).length){ this.setState({errors:errs}); this.scrollTop(); return; }
+    }
+    const toStep = Math.min(this.totalSteps(), this.state.step+1);
+    this.setState({ step: toStep, errors:{} });
+    if(toStep === this.totalSteps() && !this.isApercu()) this.submitToServer();
+    this.scrollTop();
+  };
+
+  submitPayload(){
+    const f = this.state.f; const sig = this.state.signatures; const pd = this.state.perDoc;
+    const dateOf = (id) => this.fmtDate((pd[id]&&pd[id].date)||this.todayISO());
+    const docsOut = this.docs.map((d)=>{
+      const k = this.sigKeys(d);
+      const p = pd[d.id] || {};
+      return {
+        id:d.id, titre:d.title, signe:this.docSignedStatus(d)?'Oui':'Non', date:dateOf(d.id),
+        temoin:p.temoin||'', initiales:p.initiales||'', copieDossier:(p.copieDossier!==false?'Oui':'Non'),
+        signatureEmploye: k.a ? (sig[k.a]||'') : '',
+        signatureSecondaire: k.b ? (sig[k.b]||'') : '',
+      };
+    });
+    return {
+      type:'documents', submittedAt:new Date().toISOString(),
+      nom:f.nom||'', prenom:f.prenom||'', courriel:f.courriel||'',
+      data:{
+        employe:((f.prenom||'')+' '+(f.nom||'')).trim(), poste:f.poste, entreprise:f.entreprise,
+        contactUrgence1:(f.u1Nom?(f.u1Nom+' — '+(f.u1Rel||'')+' — '+(f.u1Tel||'')):''),
+        contactUrgence2:(f.u2Nom?(f.u2Nom+' — '+(f.u2Rel||'')+' — '+(f.u2Tel||'')):''),
+        gestionnaire:f.nomGestionnaire||'',
+      },
+      documents:docsOut,
+    };
+  }
+  submitToServer(){
+    const url = (window.WT_CONFIG && window.WT_CONFIG.SCRIPT_URL) || this.props.googleScriptUrl;
+    if (this.state.sendState === 'sending' || this.state.sendState === 'sent') return;
+    if (!url){ this.setState({ sendState:'error', sendError:'L\u2019adresse du serveur RH n\u2019est pas configur\u00e9e. Contactez rh@wtcorporation.ca.' }); return; }
+    this.setState({ sendState:'sending', sendError:null });
+    fetch(url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(this.submitPayload())})
+      .then((r) => r.json())
+      .then((res) => {
+        if (res && res.ok){
+          // Soumission finale réussie : effacer toutes les données locales (exigence de confidentialité).
+          this.__finalCleared = true;
+          try { localStorage.removeItem('wt_assurance_v1'); localStorage.removeItem('wt_dossier_v1'); localStorage.removeItem('wt_documents_v1'); } catch(e){}
+          this.setState({ sendState:'sent', submissionId:res.submissionId || '' });
+        }
+        else { this.setState({ sendState:'error', sendError:(res && res.error) || 'Le serveur a refus\u00e9 la soumission.' }); }
+      })
+      .catch(() => { this.setState({ sendState:'error', sendError:'Impossible de joindre le serveur. V\u00e9rifiez votre connexion Internet, puis r\u00e9essayez.' }); });
+  }
+  retrySend = () => { this.submitToServer(); };
+  prev = () => { this.setState(s=>({ step: Math.max(0, s.step-1), errors:{} })); this.scrollTop(); };
+  start = () => { this.setState({ step: 1, errors:{} }); this.scrollTop(); };
+  goHome = () => { this.setState({ step: 0, errors:{} }); this.scrollTop(); };
+  clearAll = () => {
+    try { localStorage.removeItem('wt_documents_v1'); } catch(e){}
+    this.hadProgress = false; this.sigPads = {};
+    const a = this.readStore('wt_assurance_v1'); const d = this.readStore('wt_dossier_v1');
+    this.setState({ step:0, f:this.prefill(a,d), signatures:{}, perDoc:{}, errors:{} });
+  };
+
+  fmtDate(iso){ if(!iso) return ''; try{ return new Date(iso+'T00:00:00').toLocaleDateString('fr-CA',{year:'numeric',month:'long',day:'numeric'}); }catch(e){ return iso; } }
+
+  docSignedStatus(d){
+    const k=this.sigKeys(d); const f=this.state.f;
+    if(d.type==='urgence') return !!(f.u1Nom && f.u1Tel);
+    return !!(k.a && this.state.signatures[k.a]);
+  }
+
+  downloadCopy = () => {
+    const f=this.state.f; const sig=this.state.signatures; const pd=this.state.perDoc;
+    const esc=(s)=>String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+    const dateOf=(id)=>this.fmtDate((pd[id]&&pd[id].date)||this.todayISO());
+    const sigImg=(key,label)=>sig[key]?('<div style="display:inline-block;margin:6px 24px 4px 0;vertical-align:top"><div style="font:600 12px Arial;color:#6b6f77;margin-bottom:4px">'+label+'</div><img src="'+sig[key]+'" style="height:56px;border-bottom:1px solid #999"/></div>'):('<div style="display:inline-block;margin:6px 24px 4px 0;vertical-align:top"><div style="font:600 12px Arial;color:#6b6f77;margin-bottom:4px">'+label+'</div><div style="width:200px;border-bottom:1px solid #999;height:40px"></div></div>');
+    const rhLine=(id)=>{ const p=pd[id]||{}; return '<p style="font:12px Arial;color:#6b6f77;margin:6px 0 0">Témoin : '+(esc(p.temoin)||'____________')+' · Initiales du responsable : '+(esc(p.initiales)||'______')+' · Copie au dossier conducteur : '+(p.copieDossier!==false?'Oui':'Non')+'</p>'; };
+    const head='<div style="border-bottom:3px solid #d9682f;padding-bottom:12px;margin-bottom:14px"><h1 style="font:800 20px Arial;margin:0">Groupe WT Corporation</h1><p style="color:#6b6f77;margin:3px 0 0;font:13px Arial">Dossier de documents signés — '+(esc((f.prenom+' '+f.nom).trim())||'employé')+'</p></div>';
+    let body='';
+    for(const d of this.docs){
+      body+='<section style="page-break-inside:avoid;margin-bottom:26px;padding-bottom:18px;border-bottom:1px solid #eee">';
+      body+='<p style="font:700 11px Arial;color:#d9682f;text-transform:uppercase;letter-spacing:.5px;margin:0 0 3px">'+esc(d.cat||'')+'</p>';
+      body+='<h2 style="font:800 16px Arial;margin:0 0 8px">'+esc(d.title)+'</h2>';
+      if(d.type==='accuse'){
+        body+='<p style="font:13px Arial;line-height:1.5;color:#333;margin:0 0 8px">Je, soussigné(e), reconnais avoir reçu l\u2019information de la présente politique, avoir été informé(e) des conséquences du non-respect, et pris connaissance des objectifs, procédures et sanctions. Je m\u2019engage à respecter cette politique.</p>';
+        body+='<p style="font:13px Arial;margin:0 0 4px">Nom : <b>'+esc(f.nom)+'</b> &nbsp; Prénom : <b>'+esc(f.prenom)+'</b> &nbsp; Date : '+dateOf(d.id)+'</p>';
+        body+=sigImg(d.id+'_emp','Signature de l\u2019employé(e)');
+        body+=rhLine(d.id);
+      } else if(d.type==='attestation'){
+        body+='<p style="font:13px Arial;line-height:1.5;color:#333;margin:0 0 8px">Entreprise : <b>'+esc(f.entreprise)+'</b> &nbsp; Département : <b>'+esc(f.departement)+'</b></p>';
+        body+='<p style="font:13px Arial;line-height:1.5;color:#333;margin:0 0 8px">Attestation de prise de connaissance concernant la prévention de l\u2019intimidation et du harcèlement en milieu de travail.</p>';
+        body+='<p style="font:13px Arial;margin:0 0 4px">Employé(e) : <b>'+esc((f.prenom+' '+f.nom).trim())+'</b> &nbsp; Poste : '+esc(f.poste)+' &nbsp; Date : '+dateOf(d.id)+'</p>';
+        body+=sigImg('harcelement_emp','Signature de l\u2019employé(e)')+sigImg('harcelement_mgr','Signature du gestionnaire ('+esc(f.nomGestionnaire||'—')+')');
+      } else if(d.type==='consentement'){
+        body+='<p style="font:13px Arial;line-height:1.5;color:#333;margin:0 0 8px">Autorisation de vérification du plumitif, des dossiers SAAQ et CNESST, et des références professionnelles, aux fins de confirmer l\u2019admissibilité à l\u2019emploi.</p>';
+        body+='<p style="font:13px Arial;margin:0 0 4px">Candidat : <b>'+esc((f.prenom+' '+f.nom).trim())+'</b> &nbsp; Téléphone : '+esc(f.telephone)+' &nbsp; Date : '+dateOf(d.id)+'</p>';
+        body+=sigImg('plumitif_cand','Signature du candidat')+sigImg('plumitif_mgr','Signature du gestionnaire');
+      } else if(d.type==='urgence'){
+        body+='<p style="font:13px Arial;margin:0 0 4px">Employé : <b>'+esc(f.uNomEmploye)+'</b> &nbsp; Poste : '+esc(f.uPoste)+' &nbsp; Tél. : '+esc(f.uTel)+'</p>';
+        body+='<p style="font:13px Arial;margin:6px 0 2px"><b>Contact 1 :</b> '+esc(f.u1Nom)+' — '+esc(f.u1Rel)+' — '+esc(f.u1Tel)+' — '+esc(f.u1Adr)+'</p>';
+        body+='<p style="font:13px Arial;margin:0">'+(f.u2Nom?('<b>Contact 2 :</b> '+esc(f.u2Nom)+' — '+esc(f.u2Rel)+' — '+esc(f.u2Tel)+' — '+esc(f.u2Adr)):'')+'</p>';
+      } else if(d.type==='permis'){
+        body+='<p style="font:13px Arial;line-height:1.5;color:#333;margin:0 0 8px">Déclaration de validité du permis de conduire (Csr art. 519.7, 519.42, 519.50).</p>';
+        body+='<p style="font:13px Arial;margin:0 0 4px">Conducteur : <b>'+esc(f.nomConducteur)+'</b> &nbsp; Entreprise : '+esc(f.entreprise)+' &nbsp; Date : '+dateOf(d.id)+'</p>';
+        body+=sigImg('permis_cond','Signature du conducteur')+sigImg('permis_rep','Signature du représentant');
+      }
+      body+='</section>';
+    }
+    const html='<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Documents signés — '+esc((f.prenom+' '+f.nom).trim())+'</title></head><body style="font:14px Arial;color:#22252b;max-width:760px;margin:28px auto;padding:0 22px;background:#fff">'
+      +'<p style="background:#fdf4ec;border:1px solid #f4dcc7;border-radius:8px;padding:10px 14px;color:#8a5a34;font:13px Arial">Astuce : appuyez sur <b>Ctrl/Cmd + P</b> pour enregistrer ce dossier en PDF.</p>'
+      +head+body+'</body></html>';
+    try {
+      const w=window.open('','_blank');
+      if(w){ w.document.open(); w.document.write(html); w.document.close(); }
+      else { const blob=new Blob([html],{type:'text/html'}); const url=URL.createObjectURL(blob); const link=document.createElement('a'); link.href=url; link.download='documents-signes-'+(f.nom||'copie')+'.html'; link.click(); }
+    } catch(err){}
+  };
+
+  palette(){
+    const map = {
+      'Chaleureux (orange terracotta)': {main:'#d9682f', soft:'#fdeadd'},
+      'Corporatif (bleu profond)':      {main:'#2a5db0', soft:'#e4edfb'},
+      'Sobre (vert forêt)':             {main:'#2f7d55', soft:'#e2f1e8'},
+      'Industriel (graphite)':          {main:'#3a3f47', soft:'#e9eaec'},
+    };
+    return map[this.props.accentTheme] || map['Chaleureux (orange terracotta)'];
+  }
+
+  renderVals(){
+    const step = this.state.step;
+    const pal = this.palette();
+    const N = this.docs.length;
+    const d = this.currentDoc();
+    const k = this.sigKeys(d);
+    const isDoc = !!d;
+    const pd = (d && this.state.perDoc[d.id]) || {};
+    const nomComplet = ((this.state.f.prenom||'')+' '+(this.state.f.nom||'')).trim();
+
+    const base = {
+      step,
+      isIntro: step===0,
+      isDoc,
+      isConfirm: step === N+1,
+      accentMain: pal.main, accentSoft: pal.soft,
+      modeApercu: this.isApercu(),
+      apercuActive: !!this.state.apercu,
+      enterApercu: this.enterApercu, exitApercu: this.exitApercu,
+      f: this.state.f,
+      e: this.state.errors,
+      totalDocs: N,
+      hasNom: !!nomComplet,
+      prefilledName: nomComplet,
+      showProgress: step>=1 && step<=N,
+      showNav: step>=1 && step<=N,
+      showPrev: step>=1,
+      savedIndicator: step>=1 && step<=N,
+      stepLabel: isDoc ? ('Document ' + step + ' sur ' + N) : '',
+      stepTitle: isDoc ? d.title : '',
+      progressPct: isDoc ? Math.round((step/N)*100) : 0,
+      nextLabel: (step===N) ? 'Terminer ✓' : 'Suivant →',
+      startLabel: this.hadProgress ? 'Reprendre' : 'Commencer',
+      hasProgress: this.hadProgress,
+      isSending: this.state.sendState === 'sending',
+      isSent: this.state.sendState === 'sent',
+      isSendError: this.state.sendState === 'error',
+      sendError: this.state.sendError || '',
+      submissionId: this.state.submissionId || '',
+      retrySend: this.retrySend,
+      onField: this.onField, onPerDoc: this.onPerDoc,
+      next: this.next, prev: this.prev, start: this.start, goHome: this.goHome, clearAll: this.clearAll,
+      downloadCopy: this.downloadCopy,
+      // doc meta
+      docCat: d ? d.cat : '', docTitle: d ? d.title : '', docSub: d ? (d.sub||'') : '',
+      docExtra: !!(d && d.extra), docNb: d ? (d.nb||'') : '',
+      isAttestation: !!(d && d.type==='attestation'),
+      isAccuse: !!(d && d.type==='accuse'),
+      isConsentement: !!(d && d.type==='consentement'),
+      isUrgence: !!(d && d.type==='urgence'),
+      isPermis: !!(d && d.type==='permis'),
+      pd,
+      dateVal: pd.date || this.todayISO(),
+      hasRHBlock: !!(d && (d.type==='accuse' || d.type==='attestation')),
+      hasSecondSig: !!(d && k.b),
+      sigLabelA: k.la || 'Signature', sigLabelB: k.lb || '',
+      sigRefA: k.a ? this.getSigRef(k.a) : undefined,
+      sigRefB: k.b ? this.getSigRef(k.b) : undefined,
+      clearA: k.a ? (()=>this.clearSig(k.a)) : (()=>{}),
+      clearB: k.b ? (()=>this.clearSig(k.b)) : (()=>{}),
+    };
+
+    if (step === N+1){
+      base.docsView = this.docs.map((doc,i)=>{
+        const signed = this.docSignedStatus(doc);
+        return { num:i+1, title:doc.title, mark: signed?'✓':(i+1)+'', badgeBg: signed?'#eaf6ef':'#f0ede6', badgeColor: signed?'#2f7d55':'#9a968d' };
+      });
+    }
+    return base;
+  }
+}
+</script>
+</body>
+</html>

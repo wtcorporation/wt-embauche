@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Embauche — Partie 2 · Dossier employé — WT Corporation</title>
+<script src="./config.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700;800&family=Nunito+Sans:opsz,wght@6..12,400;6..12,500;6..12,600;6..12,700&display=swap" rel="stylesheet" />
+  <style>
+    *{box-sizing:border-box}
+    html,body{margin:0}
+    body{background:#f2efe8;font-family:'Nunito Sans',system-ui,sans-serif;color:#22252b;-webkit-font-smoothing:antialiased}
+    input,select,textarea{width:100%;padding:13px 15px;font-family:'Nunito Sans',system-ui,sans-serif;font-size:16px;color:#22252b;background:#fff;border:1.6px solid #e4e1da;border-radius:12px;outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none;appearance:none}
+    textarea{min-height:92px;resize:vertical;line-height:1.5}
+    input:focus,select:focus,textarea:focus{border-color:var(--accent,#d9682f);box-shadow:0 0 0 4px var(--accent-soft,#fdeadd)}
+    input::placeholder,textarea::placeholder{color:#a9a69d}
+    input[type=date]{min-height:49px}
+    select{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' stroke='%236b6f77' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 15px center;background-size:12px;padding-right:40px;cursor:pointer}
+    label{display:block;font-family:'Figtree',sans-serif;font-weight:600;font-size:14.5px;color:#3a3e45;margin-bottom:7px}
+    input[type=checkbox]{width:23px;height:23px;min-width:23px;padding:0;border-radius:6px;accent-color:var(--accent,#d9682f);cursor:pointer;box-shadow:none}
+    input[type=checkbox]:focus{box-shadow:0 0 0 4px var(--accent-soft,#fdeadd)}
+  </style>
+</helmet>
+<div style="--accent:{{ accentMain }};--accent-soft:{{ accentSoft }};min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:0 16px 48px">
+
+  <header style="width:100%;max-width:600px;display:flex;align-items:center;gap:14px;padding:20px 4px 18px">
+    <img src="assets/logo-wt.png" alt="WT Corporation" style="height:34px;width:auto;object-fit:contain" />
+    <div style="width:1px;height:26px;background:#d6d2c9"></div>
+    <span style="font-family:'Figtree',sans-serif;font-weight:700;font-size:14px;color:#5c626b;letter-spacing:.2px">Groupe WT Corporation</span>
+  </header>
+
+  <sc-if value="{{ modeApercu }}" hint-placeholder-val="">
+    <div style="width:100%;max-width:600px;display:flex;align-items:center;gap:9px;background:#fef6e7;border:1px solid #f2dca5;border-radius:12px;padding:10px 14px;margin-bottom:12px">
+      <span style="font-size:15px;line-height:1">👁️</span>
+      <span style="font-family:'Figtree',sans-serif;font-weight:600;font-size:13px;color:#8a6d2f">Mode aperçu RH — vous pouvez parcourir toutes les étapes sans rien remplir (validation désactivée).</span>
+    </div>
+  </sc-if>
+
+  <main style="width:100%;max-width:600px;background:#fff;border:1px solid #eae7df;border-radius:22px;box-shadow:0 22px 60px -34px rgba(40,36,30,.5);overflow:hidden">
+
+    <sc-if value="{{ showProgress }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:20px 24px 0">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:9px">
+          <span style="font-family:'Figtree',sans-serif;font-weight:700;font-size:13px;color:var(--accent,#d9682f);text-transform:uppercase;letter-spacing:.6px">{{ stepLabel }}</span>
+          <span style="font-family:'Figtree',sans-serif;font-weight:600;font-size:13px;color:#8b8880">{{ stepTitle }}</span>
+        </div>
+        <div style="height:8px;background:#efece4;border-radius:99px;overflow:hidden">
+          <div style="height:100%;width:{{ progressPct }}%;background:var(--accent,#d9682f);border-radius:99px;transition:width .4s cubic-bezier(.4,0,.2,1)"></div>
+        </div>
+      </div>
+    </sc-if>
+
+    <div style="padding:26px 24px 8px">
+
+      <!-- INTRO -->
+      <sc-if value="{{ isStep0 }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="display:inline-flex;align-items:center;gap:7px;background:#e2f1e8;color:#2f7d55;font-family:'Figtree',sans-serif;font-weight:700;font-size:12px;letter-spacing:.4px;text-transform:uppercase;padding:6px 11px;border-radius:99px;margin-bottom:16px">Partie 2 de 2 · Dossier employé</div>
+          <h1 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:26px;line-height:1.2;color:#22252b;margin:0 0 14px;text-wrap:balance">Compléter votre dossier</h1>
+          <sc-if value="{{ hasNom }}" hint-placeholder-val="">
+            <p style="font-size:16.5px;line-height:1.6;color:#4a4f57;margin:0 0 12px">Bienvenue <strong>{{ nomComplet }}</strong> — votre conducteur a été approuvé par l'assureur. 🎉</p>
+          </sc-if>
+          <p style="font-size:16.5px;line-height:1.6;color:#4a4f57;margin:0 0 18px">Cette seconde partie recueille les informations nécessaires à la création de votre dossier de paie et employé. Vos réponses restent confidentielles et ne sont accessibles qu'au département RH.</p>
+          <p style="font-size:13.5px;color:#8b8880;margin:0 0 22px">⏱️ Environ 5 minutes · Les champs marqués <span style="color:var(--accent,#d9682f);font-weight:700">*</span> sont obligatoires.</p>
+          <button type="button" onClick="{{ start }}" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:16px 20px;font-family:'Figtree',sans-serif;font-weight:700;font-size:16.5px;color:#fff;background:var(--accent,#d9682f);border:none;border-radius:14px;cursor:pointer;box-shadow:0 10px 22px -10px var(--accent,#d9682f)">{{ startLabel }} <span style="font-size:18px">→</span></button>
+          <sc-if value="{{ hasProgress }}" hint-placeholder-val="">
+            <p style="text-align:center;margin:16px 0 0;font-size:13.5px;color:#9a968d">Une réponse en cours a été trouvée. <button type="button" onClick="{{ clearAll }}" style="border:none;background:none;color:var(--accent,#d9682f);font-family:inherit;font-size:13.5px;font-weight:700;text-decoration:underline;cursor:pointer;padding:0;width:auto">Recommencer à neuf</button></p>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- STEP 1 — PAIE -->
+      <sc-if value="{{ isStep1 }}" hint-placeholder-val="">
+        <div>
+          <div style="display:flex;gap:12px;background:#f4f6fb;border:1px solid #d9e2f2;border-radius:14px;padding:14px 16px;margin-bottom:22px">
+            <span style="font-size:18px;line-height:1.3">🔒</span>
+            <p style="margin:0;font-size:14px;line-height:1.55;color:#3a4a63">Ces informations sont nécessaires à la création de votre dossier de paie. Elles seront utilisées uniquement par le département RH et la paie.</p>
+          </div>
+          <sc-if value="{{ collecterNAS }}" hint-placeholder-val="{{ true }}">
+            <div style="margin-bottom:18px"><label>Numéro d'assurance sociale (NAS) <span style="color:var(--accent)">*</span></label><input type="text" name="nas" value="{{ f.nas }}" onChange="{{ onField }}" inputmode="numeric" placeholder="000 000 000" /><sc-if value="{{ e.nas }}" hint-placeholder-val=""><p style="margin:6px 0 0;font-size:13px;color:#c0392b">{{ e.nas }}</p></sc-if></div>
+          </sc-if>
+          <sc-if value="{{ deferNAS }}" hint-placeholder-val="">
+            <div style="margin-bottom:18px;background:#fbfaf7;border:1px dashed #d5d1c8;border-radius:12px;padding:14px 16px"><p style="margin:0;font-size:14px;color:#5c626b;line-height:1.5">Pour votre sécurité, votre numéro d'assurance sociale ne sera pas saisi ici. Le département RH le recueillera par un canal sécurisé lors de votre première journée.</p></div>
+          </sc-if>
+          <div style="margin-bottom:18px"><label>Adresse courriel pour les talons de paie <span style="color:var(--accent)">*</span></label><input type="email" name="courrielPaie" value="{{ f.courrielPaie }}" onChange="{{ onField }}" placeholder="vous@exemple.com" /><sc-if value="{{ e.courrielPaie }}" hint-placeholder-val=""><p style="margin:6px 0 0;font-size:13px;color:#c0392b">{{ e.courrielPaie }}</p></sc-if></div>
+          <div style="margin-bottom:18px"><label>Institution bancaire <span style="color:var(--accent)">*</span></label><input type="text" name="banque" value="{{ f.banque }}" onChange="{{ onField }}" placeholder="Ex. Desjardins, RBC…" /><sc-if value="{{ e.banque }}" hint-placeholder-val=""><p style="margin:6px 0 0;font-size:13px;color:#c0392b">{{ e.banque }}</p></sc-if></div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:120px;margin-bottom:18px"><label>N° de transit <span style="color:var(--accent)">*</span></label><input type="text" name="transit" value="{{ f.transit }}" onChange="{{ onField }}" inputmode="numeric" placeholder="5 chiffres" /><sc-if value="{{ e.transit }}" hint-placeholder-val=""><p style="margin:6px 0 0;font-size:13px;color:#c0392b">{{ e.transit }}</p></sc-if></div>
+            <div style="flex:1;min-width:120px;margin-bottom:18px"><label>N° d'institution <span style="color:var(--accent)">*</span></label><input type="text" name="institution" value="{{ f.institution }}" onChange="{{ onField }}" inputmode="numeric" placeholder="3 chiffres" /><sc-if value="{{ e.institution }}" hint-placeholder-val=""><p style="margin:6px 0 0;font-size:13px;color:#c0392b">{{ e.institution }}</p></sc-if></div>
+          </div>
+          <div style="margin-bottom:18px"><label>N° de compte <span style="color:var(--accent)">*</span></label><input type="text" name="compte" value="{{ f.compte }}" onChange="{{ onField }}" inputmode="numeric" placeholder="7 à 12 chiffres" /><sc-if value="{{ e.compte }}" hint-placeholder-val=""><p style="margin:6px 0 0;font-size:13px;color:#c0392b">{{ e.compte }}</p></sc-if></div>
+          <p style="font-size:14px;color:#6b6f77;margin:0 0 12px;line-height:1.5">Pour valider vos coordonnées bancaires, joignez un spécimen de chèque :</p>
+          <dc-import name="Televersement" title="Spécimen de chèque" hint="PDF, JPG, PNG ou HEIC · ou un chèque annulé" option-label="Recommandé" slot="specimen" multiple="{{ false }}" files="{{ files_specimen }}" error="{{ fileErr_specimen }}" on-file="{{ onFile }}" on-remove="{{ onRemoveFile }}" hint-size="100%,150px"></dc-import>
+        </div>
+      </sc-if>
+
+      <!-- STEP 2 — URGENCE -->
+      <sc-if value="{{ isStep2 }}" hint-placeholder-val="">
+        <div>
+          <p style="font-size:15px;color:#6b6f77;margin:0 0 22px;line-height:1.5">Qui devons-nous joindre en cas d'urgence ?</p>
+          <div style="margin-bottom:18px"><label>Nom complet du contact <span style="color:var(--accent)">*</span></label><input type="text" name="urgenceNom" value="{{ f.urgenceNom }}" onChange="{{ onField }}" /><sc-if value="{{ e.urgenceNom }}" hint-placeholder-val=""><p style="margin:6px 0 0;font-size:13px;color:#c0392b">{{ e.urgenceNom }}</p></sc-if></div>
+          <div style="margin-bottom:18px"><label>Lien avec vous <span style="color:var(--accent)">*</span></label><input type="text" name="urgenceLien" value="{{ f.urgenceLien }}" onChange="{{ onField }}" placeholder="Ex. Conjoint(e), parent, ami(e)…" /><sc-if value="{{ e.urgenceLien }}" hint-placeholder-val=""><p style="margin:6px 0 0;font-size:13px;color:#c0392b">{{ e.urgenceLien }}</p></sc-if></div>
+          <div style="margin-bottom:18px"><label>Numéro de téléphone <span style="color:var(--accent)">*</span></label><input type="tel" name="urgenceTel" value="{{ f.urgenceTel }}" onChange="{{ onField }}" placeholder="(000) 000-0000" /><sc-if value="{{ e.urgenceTel }}" hint-placeholder-val=""><p style="margin:6px 0 0;font-size:13px;color:#c0392b">{{ e.urgenceTel }}</p></sc-if></div>
+          <div style="margin-bottom:6px"><label>Deuxième numéro (si disponible)</label><input type="tel" name="urgenceTel2" value="{{ f.urgenceTel2 }}" onChange="{{ onField }}" placeholder="(000) 000-0000" /></div>
+        </div>
+      </sc-if>
+
+      <!-- STEP 3 — DOCUMENTS -->
+      <sc-if value="{{ isStep3 }}" hint-placeholder-val="">
+        <div>
+          <h2 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:20px;color:#22252b;margin:0 0 8px">Documents à joindre</h2>
+          <p style="font-size:15px;color:#6b6f77;margin:0 0 20px;line-height:1.55">Ajoutez les documents demandés ci-dessous. Vous pouvez prendre une photo claire ou téléverser un PDF.</p>
+          <dc-import name="Televersement" title="Curriculum vitæ (CV)" hint="Si applicable" option-label="Facultatif" slot="cv" multiple="{{ false }}" files="{{ files_cv }}" error="{{ fileErr_cv }}" on-file="{{ onFile }}" on-remove="{{ onRemoveFile }}" hint-size="100%,150px"></dc-import>
+          <dc-import name="Televersement" title="Autres documents" hint="Vous pouvez en ajouter plusieurs" option-label="Facultatif" slot="autres" multiple="{{ true }}" files="{{ files_autres }}" error="{{ fileErr_autres }}" on-file="{{ onFile }}" on-remove="{{ onRemoveFile }}" hint-size="100%,150px"></dc-import>
+        </div>
+      </sc-if>
+
+      <!-- STEP 4 — CONSENTEMENTS -->
+      <sc-if value="{{ isStep4 }}" hint-placeholder-val="">
+        <div>
+          <p style="font-size:15px;color:#6b6f77;margin:0 0 20px;line-height:1.5">Dernière étape ! Veuillez confirmer et signer.</p>
+          <label style="display:flex;gap:12px;align-items:flex-start;background:#fbfaf7;border:1.6px solid #eae7df;border-radius:13px;padding:14px;margin-bottom:12px;font-weight:400;font-family:'Nunito Sans',sans-serif;font-size:14.5px;color:#3a3e45;cursor:pointer;line-height:1.5"><input type="checkbox" name="consent1" checked="{{ f.consent1 }}" onChange="{{ onCheck }}" /><span>Je confirme que les informations fournies sont exactes.</span></label>
+          <label style="display:flex;gap:12px;align-items:flex-start;background:#fbfaf7;border:1.6px solid #eae7df;border-radius:13px;padding:14px;margin-bottom:12px;font-weight:400;font-family:'Nunito Sans',sans-serif;font-size:14.5px;color:#3a3e45;cursor:pointer;line-height:1.5"><input type="checkbox" name="consent2" checked="{{ f.consent2 }}" onChange="{{ onCheck }}" /><span>J'autorise l'entreprise à utiliser ces informations pour créer mon dossier employé.</span></label>
+          <label style="display:flex;gap:12px;align-items:flex-start;background:#fbfaf7;border:1.6px solid #eae7df;border-radius:13px;padding:14px;margin-bottom:12px;font-weight:400;font-family:'Nunito Sans',sans-serif;font-size:14.5px;color:#3a3e45;cursor:pointer;line-height:1.5"><input type="checkbox" name="consent3" checked="{{ f.consent3 }}" onChange="{{ onCheck }}" /><span>Je comprends que mes informations seront traitées de façon confidentielle.</span></label>
+          <label style="display:flex;gap:12px;align-items:flex-start;background:#fbfaf7;border:1.6px solid #eae7df;border-radius:13px;padding:14px;margin-bottom:8px;font-weight:400;font-family:'Nunito Sans',sans-serif;font-size:14.5px;color:#3a3e45;cursor:pointer;line-height:1.5"><input type="checkbox" name="consent4" checked="{{ f.consent4 }}" onChange="{{ onCheck }}" /><span>J'accepte d'être contacté par téléphone, courriel ou texto pour compléter mon dossier d'embauche.</span></label>
+          <sc-if value="{{ e.consents }}" hint-placeholder-val=""><p style="margin:4px 0 0;font-size:13px;color:#c0392b">{{ e.consents }}</p></sc-if>
+
+          <div style="background:#f4f7fb;border:1px solid #d9e2ef;border-radius:13px;padding:14px 16px;margin:16px 0 12px">
+            <p style="margin:0;font-size:13.5px;color:#4a5568;line-height:1.55">🔒 Les renseignements fournis dans ce formulaire sont transmis au département RH de WT Corporation et seront utilisés uniquement pour le traitement de votre dossier d'embauche. Les documents transmis seront sauvegardés dans l'environnement Google Workspace sécurisé de l'entreprise.</p>
+          </div>
+          <label style="display:flex;gap:12px;align-items:flex-start;background:#fbfaf7;border:1.6px solid #eae7df;border-radius:13px;padding:14px;margin-bottom:12px;font-weight:400;font-family:'Nunito Sans',sans-serif;font-size:14.5px;color:#3a3e45;cursor:pointer;line-height:1.5"><input type="checkbox" name="consentGlobal" checked="{{ f.consentGlobal }}" onChange="{{ onCheck }}" /><span>Je confirme que les renseignements fournis sont exacts et j'autorise WT Corporation et ses entreprises affiliées (Groupe WT Corporation, Remorquage PDR 2011 inc., Livraison Primus inc., Remorquage Bean &amp; Fille, Remorquage M&amp;M et leurs entreprises affiliées) à utiliser ces renseignements pour le traitement de mon dossier d'embauche. <span style="color:var(--accent)">*</span></span></label>
+          <sc-if value="{{ e.consentGlobal }}" hint-placeholder-val=""><p style="margin:4px 0 0;font-size:13px;color:#c0392b">{{ e.consentGlobal }}</p></sc-if>
+
+          <div style="margin-top:24px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px"><label style="margin:0">Signature électronique <span style="color:var(--accent)">*</span></label><button type="button" onClick="{{ clearSig }}" style="border:none;background:none;color:#8b8880;font-family:'Figtree',sans-serif;font-size:13px;font-weight:600;text-decoration:underline;cursor:pointer;padding:0;width:auto">Effacer</button></div>
+            <canvas ref="{{ sigRef }}" style="width:100%;height:170px;background:#fff;border:1.6px solid #e4e1da;border-radius:12px;display:block;touch-action:none;cursor:crosshair"></canvas>
+            <p style="margin:8px 0 0;font-size:13px;color:#8b8880">✍️ Signez avec votre doigt ou la souris · Date de signature : <strong style="color:#3a3e45">{{ dateSignature }}</strong></p>
+            <sc-if value="{{ e.signature }}" hint-placeholder-val=""><p style="margin:6px 0 0;font-size:13px;color:#c0392b">{{ e.signature }}</p></sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- STEP 5 — ENVOI / CONFIRMATION -->
+      <sc-if value="{{ isStep5 }}" hint-placeholder-val="">
+        <div>
+        <sc-if value="{{ isSending }}" hint-placeholder-val="">
+          <div style="text-align:center;padding:34px 4px 30px">
+            <div style="width:74px;height:74px;border-radius:50%;background:#fdf4ec;border:2px solid #f4dcc7;display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 20px">⏳</div>
+            <h1 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:22px;color:#22252b;margin:0 0 10px">Envoi en cours…</h1>
+            <p style="font-size:15px;line-height:1.6;color:#4a4f57;margin:0 auto;max-width:420px">Vos informations et vos documents sont en cours de transmission au département RH. Ne fermez pas cette page.</p>
+          </div>
+        </sc-if>
+        <sc-if value="{{ isSendError }}" hint-placeholder-val="">
+          <div style="text-align:center;padding:24px 4px 20px">
+            <div style="width:74px;height:74px;border-radius:50%;background:#fdecea;border:2px solid #f0c4be;display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 20px">⚠️</div>
+            <h1 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:22px;color:#22252b;margin:0 0 10px">L'envoi a échoué</h1>
+            <p style="font-size:15px;line-height:1.6;color:#b23b32;margin:0 auto 20px;max-width:440px">{{ sendError }}</p>
+            <div style="display:flex;flex-direction:column;gap:12px;max-width:360px;margin:0 auto">
+              <button type="button" onClick="{{ retrySend }}" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:15px 20px;font-family:'Figtree',sans-serif;font-weight:700;font-size:15.5px;color:#fff;background:var(--accent,#d9682f);border:none;border-radius:13px;cursor:pointer">↻ Réessayer l'envoi</button>
+              <button type="button" onClick="{{ downloadCopy }}" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:15px 20px;font-family:'Figtree',sans-serif;font-weight:700;font-size:15.5px;color:#4a4f57;background:#fff;border:1.6px solid #e0ddd6;border-radius:13px;cursor:pointer">📄 Télécharger une copie de secours</button>
+            </div>
+            <p style="font-size:13px;color:#8b8880;margin:16px auto 0;max-width:420px">Vos réponses sont conservées sur cet appareil : rien n'est perdu. Si le problème persiste, contactez rh@wtcorporation.ca.</p>
+          </div>
+        </sc-if>
+        <sc-if value="{{ isSent }}" hint-placeholder-val="">
+        <div style="text-align:center;padding:14px 4px 10px">
+          <div style="width:74px;height:74px;border-radius:50%;background:#eaf6ef;border:2px solid #bfe3cd;display:flex;align-items:center;justify-content:center;font-size:38px;margin:0 auto 20px">✓</div>
+          <h1 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:24px;color:#22252b;margin:0 0 14px">Merci !</h1>
+          <p style="font-size:16px;line-height:1.6;color:#4a4f57;margin:0 auto 10px;max-width:420px">Votre dossier employé et vos documents ont bien été transmis au département RH. Si des informations sont manquantes, une personne de notre équipe communiquera avec vous.</p>
+          <sc-if value="{{ submissionId }}" hint-placeholder-val=""><p style="font-size:13px;color:#8b8880;margin:0 auto 26px">N° de confirmation : <strong>{{ submissionId }}</strong></p></sc-if>
+          <div style="display:flex;flex-direction:column;gap:12px;max-width:360px;margin:0 auto">
+            <a href="documents-a-signer.html" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:15px 20px;font-family:'Figtree',sans-serif;font-weight:700;font-size:15.5px;color:#fff;background:#2f7d55;border:none;border-radius:13px;cursor:pointer;text-decoration:none;box-sizing:border-box">Continuer vers les documents à signer <span style="font-size:18px">→</span></a>
+            <button type="button" onClick="{{ downloadCopy }}" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:15px 20px;font-family:'Figtree',sans-serif;font-weight:700;font-size:15.5px;color:#4a4f57;background:#fff;border:1.6px solid #e0ddd6;border-radius:13px;cursor:pointer">📄 Télécharger une copie PDF</button>
+            <button type="button" onClick="{{ goHome }}" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:15px 20px;font-family:'Figtree',sans-serif;font-weight:700;font-size:15.5px;color:#4a4f57;background:#fff;border:1.6px solid #e0ddd6;border-radius:13px;cursor:pointer">Retour à l'accueil</button>
+          </div>
+          <sc-if value="{{ vueRH }}" hint-placeholder-val="">
+            <p style="margin:22px auto 0;max-width:360px;padding-top:16px;border-top:1px dashed #e4e1da"><button type="button" onClick="{{ openRH }}" style="border:none;background:none;color:#8b8880;font-family:'Figtree',sans-serif;font-size:13.5px;font-weight:700;text-decoration:underline;cursor:pointer;padding:0;width:auto">🔧 Accès RH — compléter la fiche interne (salaire, statut…)</button></p>
+          </sc-if>
+        </div>
+        </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- STEP 9 — FICHE RH INTERNE -->
+      <sc-if value="{{ isStep9 }}" hint-placeholder-val="">
+        <div>
+          <div style="display:flex;align-items:center;gap:9px;background:#f0f1f4;border:1px solid #d7dae1;border-radius:12px;padding:11px 14px;margin-bottom:20px">
+            <span style="font-size:15px;line-height:1">🔧</span>
+            <span style="font-family:'Figtree',sans-serif;font-weight:600;font-size:13px;color:#4a4f57">Section réservée aux RH — non visible par l'employé. À compléter lors de l'ouverture du dossier.</span>
+          </div>
+          <h2 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:20px;color:#22252b;margin:0 0 4px">Fiche RH interne</h2>
+          <p style="font-size:14.5px;color:#6b6f77;margin:0 0 22px;line-height:1.5">Informations complémentaires gérées par le département RH.</p>
+
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:150px;margin-bottom:18px"><label>N° d'employé</label><input type="text" name="rhNumeroEmploye" value="{{ f.rhNumeroEmploye }}" onChange="{{ onField }}" placeholder="Ex. WT-2026-014" /></div>
+            <div style="flex:1;min-width:150px;margin-bottom:18px"><label>Statut du dossier</label><select name="rhStatut" value="{{ f.rhStatut }}" onChange="{{ onField }}"><option value="Reçu">Reçu</option><option value="À valider">À valider</option><option value="Documents manquants">Documents manquants</option><option value="Complet">Complet</option></select></div>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:150px;margin-bottom:18px"><label>Salaire / taux</label><input type="text" name="rhSalaire" value="{{ f.rhSalaire }}" onChange="{{ onField }}" placeholder="Ex. 25,00 $ ou 55 000 $" /></div>
+            <div style="flex:1;min-width:150px;margin-bottom:18px"><label>Base</label><select name="rhBase" value="{{ f.rhBase }}" onChange="{{ onField }}"><option value="">Choisir…</option><option value="Horaire">Horaire</option><option value="Annuel">Annuel</option><option value="À la course / commission">À la course / commission</option></select></div>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:150px;margin-bottom:18px"><label>Fréquence de paie</label><select name="rhFrequence" value="{{ f.rhFrequence }}" onChange="{{ onField }}"><option value="">Choisir…</option><option value="Hebdomadaire">Hebdomadaire</option><option value="Aux 2 semaines">Aux 2 semaines</option><option value="Bimensuelle">Bimensuelle</option><option value="Mensuelle">Mensuelle</option></select></div>
+            <div style="flex:1;min-width:150px;margin-bottom:18px"><label>Mode de paiement</label><select name="rhModePaiement" value="{{ f.rhModePaiement }}" onChange="{{ onField }}"><option value="">Choisir…</option><option value="Dépôt direct">Dépôt direct</option><option value="Chèque">Chèque</option></select></div>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:150px;margin-bottom:18px"><label>Vacances (%)</label><input type="text" name="rhVacances" value="{{ f.rhVacances }}" onChange="{{ onField }}" placeholder="Ex. 4 % / 6 %" /></div>
+            <div style="flex:1;min-width:150px;margin-bottom:18px"><label>Centre de coût / n° de projet</label><input type="text" name="rhCentreCout" value="{{ f.rhCentreCout }}" onChange="{{ onField }}" /></div>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:150px;margin-bottom:18px"><label>Date d'approbation</label><input type="date" name="rhDateApprobation" value="{{ f.rhDateApprobation }}" onChange="{{ onField }}" /></div>
+            <div style="flex:1;min-width:150px;margin-bottom:18px"><label>Approuvé par</label><input type="text" name="rhApprouvePar" value="{{ f.rhApprouvePar }}" onChange="{{ onField }}" placeholder="Nom du responsable RH" /></div>
+          </div>
+          <div style="margin-bottom:22px"><label>Notes internes RH</label><textarea name="rhNotes" value="{{ f.rhNotes }}" onChange="{{ onField }}" placeholder="Relances, particularités du dossier, suivi…"></textarea></div>
+
+          <div style="display:flex;gap:12px">
+            <button type="button" onClick="{{ saveRH }}" style="flex:0 0 auto;padding:15px 22px;font-family:'Figtree',sans-serif;font-weight:700;font-size:15.5px;color:#4a4f57;background:#fff;border:1.6px solid #e0ddd6;border-radius:13px;cursor:pointer">← Retour</button>
+            <button type="button" onClick="{{ saveRH }}" style="flex:1;padding:15px 22px;font-family:'Figtree',sans-serif;font-weight:700;font-size:15.5px;color:#fff;background:var(--accent,#d9682f);border:none;border-radius:13px;cursor:pointer">Enregistrer la fiche RH ✓</button>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+
+    <sc-if value="{{ showNav }}" hint-placeholder-val="">
+      <div style="display:flex;gap:12px;padding:14px 24px 22px;border-top:1px solid #f0ede6;background:#fff;position:sticky;bottom:0">
+        <sc-if value="{{ showPrev }}" hint-placeholder-val="{{ true }}">
+          <button type="button" onClick="{{ prev }}" style="flex:0 0 auto;padding:15px 22px;font-family:'Figtree',sans-serif;font-weight:700;font-size:15.5px;color:#4a4f57;background:#fff;border:1.6px solid #e0ddd6;border-radius:13px;cursor:pointer">← Précédent</button>
+        </sc-if>
+        <button type="button" onClick="{{ next }}" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:15px 22px;font-family:'Figtree',sans-serif;font-weight:700;font-size:15.5px;color:#fff;background:var(--accent,#d9682f);border:none;border-radius:13px;cursor:pointer;box-shadow:0 8px 18px -9px var(--accent,#d9682f)">{{ nextLabel }}</button>
+      </div>
+    </sc-if>
+  </main>
+
+  <p style="max-width:600px;width:100%;text-align:center;font-size:12.5px;color:#9a968d;margin:18px auto 0;line-height:1.5">🔒 Partie 2 de 2 · Données confidentielles · réservées au département RH de Groupe WT Corporation.<sc-if value="{{ savedIndicator }}" hint-placeholder-val=""><br /><span style="color:#7ea88c;font-weight:600">✓ Vos réponses sont sauvegardées automatiquement sur cet appareil.</span></sc-if></p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;620px&quot;,&quot;height&quot;:&quot;800px&quot;},&quot;accentTheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Chaleureux (orange terracotta)&quot;,&quot;options&quot;:[&quot;Chaleureux (orange terracotta)&quot;,&quot;Corporatif (bleu profond)&quot;,&quot;Sobre (vert forêt)&quot;,&quot;Industriel (graphite)&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Apparence&quot;},&quot;collecterNAS&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Confidentialité&quot;},&quot;modeApercu&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Aperçu RH&quot;},&quot;vueRH&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Aperçu RH&quot;},&quot;googleScriptUrl&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Déploiement&quot;,&quot;label&quot;:&quot;URL du script Google (envoi RH)&quot;}}">
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    const saved = this.load();
+    this.assurance = this.loadAssurance();
+    this.state = {
+      step: (typeof saved.step === 'number') ? saved.step : 0,
+      f: Object.assign(this.emptyForm(), saved.f || {}),
+      files: {},
+      fileErrors: {},
+      errors: {},
+      signature: saved.signature || null,
+      sendState: ((typeof saved.step === 'number') && saved.step === 5) ? 'sent' : null,
+      sendError: null,
+      submissionId: '',
+    };
+    this.hadProgress = !!(saved.f && Object.keys(saved.f).some(k => saved.f[k] && saved.f[k] !== false));
+    this.sig = { drawing:false, ready:false };
+  }
+
+  emptyForm(){
+    return {
+      nas:'',courrielPaie:'',banque:'',transit:'',institution:'',compte:'',
+      urgenceNom:'',urgenceLien:'',urgenceTel:'',urgenceTel2:'',
+      consent1:false,consent2:false,consent3:false,consent4:false,consentGlobal:false,
+      rhNumeroEmploye:'',rhStatut:'Reçu',rhSalaire:'',rhBase:'',rhFrequence:'',rhModePaiement:'',rhVacances:'',rhDateApprobation:'',rhApprouvePar:'',rhCentreCout:'',rhNotes:'',
+    };
+  }
+
+  load(){ try { return JSON.parse(localStorage.getItem('wt_dossier_v1')||'{}'); } catch(e){ return {}; } }
+  loadAssurance(){ try { return JSON.parse(localStorage.getItem('wt_assurance_v1')||'{}'); } catch(e){ return {}; } }
+  save(){ try { const f = Object.assign({}, this.state.f); delete f.nas; delete f.transit; delete f.institution; delete f.compte; localStorage.setItem('wt_dossier_v1', JSON.stringify({step:this.state.step, f:f, signature:this.state.signature})); } catch(e){} }
+
+  componentDidUpdate(prevProps, prevState){
+    if (prevState.f !== this.state.f || prevState.step !== this.state.step || prevState.signature !== this.state.signature) this.save();
+  }
+
+  scrollTop(){ try { window.scrollTo({top:0,behavior:'smooth'}); } catch(e){ window.scrollTo(0,0); } }
+
+  onField = (e) => {
+    const {name, value} = e.target;
+    this.setState(s => ({ f: {...s.f, [name]: value}, errors: {...s.errors, [name]: undefined} }));
+  };
+  onCheck = (e) => {
+    const {name, checked} = e.target;
+    this.setState(s => ({ f: {...s.f, [name]: checked}, errors: {...s.errors, consents: undefined} }));
+  };
+
+  fmtSize(bytes){
+    if (bytes < 1024) return bytes + ' o';
+    if (bytes < 1048576) return (bytes/1024).toFixed(0) + ' Ko';
+    return (bytes/1048576).toFixed(1) + ' Mo';
+  }
+
+  onFile = (e) => {
+    const input = e.target;
+    const slot = input.dataset.slot;
+    const multi = input.multiple;
+    const allowed = ['pdf','jpg','jpeg','png','heic'];
+    const maxBytes = 15 * 1048576;
+    const mimeByExt = {pdf:'application/pdf',jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',heic:'image/heic'};
+    const incoming = Array.from(input.files || []);
+    let err = null;
+    const jobs = [];
+    for (const file of incoming){
+      const ext = (file.name.split('.').pop() || '').toLowerCase();
+      if (!allowed.includes(ext)){ err = 'Format non accept\u00e9 (\u00ab ' + ext + ' \u00bb). Utilisez PDF, JPG, PNG ou HEIC.'; continue; }
+      if (file.size > maxBytes){ err = 'Le fichier \u00ab ' + file.name + ' \u00bb d\u00e9passe 15 Mo.'; continue; }
+      jobs.push(new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve({ name:file.name, size:file.size, sizeStr:this.fmtSize(file.size), mimeType:file.type || mimeByExt[ext] || 'application/octet-stream', base64:String(reader.result).split(',')[1] || '' });
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(file);
+      }));
+    }
+    Promise.all(jobs).then((results) => {
+      const accepted = results.filter(Boolean);
+      const readErr = results.some(x => !x) ? 'Un fichier n\u2019a pas pu \u00eatre lu. Veuillez r\u00e9essayer.' : err;
+      this.setState(s => {
+        const prev = multi ? (s.files[slot] || []) : [];
+        const merged = prev.concat(accepted).map((x,i)=>({...x, idx:i}));
+        return { files: {...s.files, [slot]: merged}, fileErrors: {...s.fileErrors, [slot]: readErr} };
+      });
+    });
+    input.value = '';
+  };
+
+  onRemoveFile = (e) => {
+    const btn = e.currentTarget;
+    const slot = btn.dataset.slot;
+    const idx = parseInt(btn.dataset.idx, 10);
+    this.setState(s => {
+      const arr = (s.files[slot] || []).filter((_,i)=>i!==idx).map((x,i)=>({...x, idx:i}));
+      return { files: {...s.files, [slot]: arr} };
+    });
+  };
+
+  sigRef = (el) => {
+    if (!el) return;
+    const c = el;
+    if (this.sigCanvas === c && this.sig.ready){ this.redrawSig(); return; }
+    const dpr = window.devicePixelRatio || 1;
+    const rect = c.getBoundingClientRect();
+    c.width = Math.max(1, Math.round(rect.width * dpr));
+    c.height = Math.max(1, Math.round(rect.height * dpr));
+    const ctx = c.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#22252b';
+    this.sigCtx = ctx; this.sigCanvas = c; this.sigW = rect.width; this.sigH = rect.height;
+    const pos = (ev) => { const r = c.getBoundingClientRect(); const t = ev.touches ? ev.touches[0] : ev; return { x: t.clientX - r.left, y: t.clientY - r.top }; };
+    c.onpointerdown = (ev) => { ev.preventDefault(); this.sig.drawing = true; const p = pos(ev); ctx.beginPath(); ctx.moveTo(p.x, p.y); try { c.setPointerCapture(ev.pointerId); } catch(e){} };
+    c.onpointermove = (ev) => { if(!this.sig.drawing) return; ev.preventDefault(); const p = pos(ev); ctx.lineTo(p.x, p.y); ctx.stroke(); };
+    const end = () => { if(!this.sig.drawing) return; this.sig.drawing = false; try { this.setState({ signature: c.toDataURL('image/png') }); } catch(e){} };
+    c.onpointerup = end; c.onpointercancel = end; c.onpointerleave = end;
+    this.sig.ready = true;
+    this.redrawSig();
+  };
+  redrawSig(){
+    if (this.state.signature && this.sigCtx){
+      const img = new Image();
+      img.onload = () => { this.sigCtx.clearRect(0,0,this.sigW,this.sigH); this.sigCtx.drawImage(img, 0, 0, this.sigW, this.sigH); };
+      img.src = this.state.signature;
+    }
+  }
+  clearSig = () => {
+    if (this.sigCtx && this.sigCanvas){ this.sigCtx.clearRect(0,0,this.sigCanvas.width,this.sigCanvas.height); }
+    this.sig.drawing = false;
+    this.setState({ signature: null });
+  };
+
+  requiredFor(step){
+    const R = {
+      1: (this.props.collecterNAS === false ? [] : [['nas','NAS']]).concat([['courrielPaie','Courriel de paie'],['banque','Institution bancaire'],['transit','Transit'],['institution','Institution'],['compte','Compte']]),
+      2: [['urgenceNom','Nom du contact'],['urgenceLien','Lien'],['urgenceTel','Téléphone']],
+      3: [],
+      4: [],
+    };
+    return R[step] || [];
+  }
+
+  validateStep(step){
+    const errs = {};
+    for (const [key,label] of this.requiredFor(step)){
+      if (!this.state.f[key] || String(this.state.f[key]).trim() === '') errs[key] = 'Ce champ est requis.';
+    }
+    if (step === 4){
+      if (!(this.state.f.consent1 && this.state.f.consent2 && this.state.f.consent3 && this.state.f.consent4)) errs.consents = 'Veuillez cocher les quatre cases pour continuer.';
+      if (!this.state.f.consentGlobal) errs.consentGlobal = 'Veuillez confirmer l\u2019exactitude des renseignements et autoriser leur utilisation.';
+      if (!this.state.signature) errs.signature = 'Votre signature est requise.';
+    }
+    return errs;
+  }
+
+  next = () => {
+    if (this.props.modeApercu){ this.setState(s => ({ step: Math.min(5, s.step + 1), errors: {} })); this.scrollTop(); return; }
+    const errs = this.validateStep(this.state.step);
+    if (Object.keys(errs).length){ this.setState({ errors: errs }); this.scrollTop(); return; }
+    const toStep = Math.min(5, this.state.step + 1);
+    this.setState({ step: toStep, errors: {} });
+    if (toStep === 5) this.submitToServer();
+    this.scrollTop();
+  };
+
+  fileCategories(){
+    return { specimen:'Specimen cheque', cv:'CV', autres:'Document RH' };
+  }
+  collectFiles(){
+    const files = this.state.files; const cats = this.fileCategories();
+    const out = [];
+    for (const slot in cats){
+      for (const x of (files[slot]||[])){
+        out.push({ categorie:cats[slot], nom:x.name, mimeType:x.mimeType||'', taille:x.size||0, base64:x.base64||'' });
+      }
+    }
+    return out;
+  }
+  submitPayload(){
+    const f = this.state.f;
+    const a = (this.assurance && this.assurance.f) || {};
+    const files = this.state.files;
+    const fl = (slot) => (files[slot]||[]).map(x=>x.name).join(', ');
+    return {
+      type:'dossier', submittedAt:new Date().toISOString(),
+      nom:a.nom||'', prenom:a.prenom||'',
+      courriel:f.courrielPaie||a.courriel||'', telephone:a.telephone||'',
+      compagnie:(a.compagnie==='Autre'?a.compagnieAutre:a.compagnie)||'', poste:a.poste||'',
+      data:{
+        employe:this.nomComplet(),
+        nasFourni:(this.props.collecterNAS===false?'Recueilli par RH':(f.nas?'Fourni':'\u2014')),
+        courrielPaie:f.courrielPaie, banqueFournie:(f.banque?'Fournie':'\u2014'), compteFourni:(f.compte?'Fourni':'\u2014'),
+        urgenceNom:f.urgenceNom, urgenceLien:f.urgenceLien, urgenceTel:f.urgenceTel, urgenceTel2:f.urgenceTel2,
+        documents:['specimen','cv','autres'].map(s=>fl(s)).filter(Boolean).join(', '),
+        consentements:((f.consent1&&f.consent2&&f.consent3&&f.consent4&&f.consentGlobal)?'Toutes confirm\u00e9es':'Incomplet'),
+        dateSignature:this.dateSignature(),
+      },
+      confidentiel:{
+        nas:(this.props.collecterNAS===false?'':(f.nas||'')),
+        banque:f.banque||'', transit:f.transit||'', institution:f.institution||'', compte:f.compte||'',
+      },
+      signature:this.state.signature||'',
+      fichiers:this.collectFiles(),
+    };
+  }
+  submitToServer(){
+    const url = (window.WT_CONFIG && window.WT_CONFIG.SCRIPT_URL) || this.props.googleScriptUrl;
+    if (this.state.sendState === 'sending' || this.state.sendState === 'sent') return;
+    if (!url){ this.setState({ sendState:'error', sendError:'L\u2019adresse du serveur RH n\u2019est pas configur\u00e9e. Contactez rh@wtcorporation.ca.' }); return; }
+    this.setState({ sendState:'sending', sendError:null });
+    fetch(url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(this.submitPayload())})
+      .then((r) => r.json())
+      .then((res) => {
+        if (res && res.ok){ this.setState({ sendState:'sent', submissionId:res.submissionId || '' }); }
+        else { this.setState({ sendState:'error', sendError:(res && res.error) || 'Le serveur a refus\u00e9 la soumission.' }); }
+      })
+      .catch(() => { this.setState({ sendState:'error', sendError:'Impossible de joindre le serveur. V\u00e9rifiez votre connexion Internet, puis r\u00e9essayez.' }); });
+  }
+  retrySend = () => { this.submitToServer(); };
+  prev = () => { this.setState(s => ({ step: Math.max(0, s.step - 1), errors: {} })); this.scrollTop(); };
+  start = () => { this.setState({ step: 1 }); this.scrollTop(); };
+  goHome = () => { this.setState({ step: 0 }); this.scrollTop(); };
+  openRH = () => { this.setState({ step: 9, errors: {} }); this.scrollTop(); };
+  saveRH = () => { this.setState({ step: 5 }); this.scrollTop(); };
+  clearAll = () => {
+    try { localStorage.removeItem('wt_dossier_v1'); } catch(e){}
+    this.hadProgress = false;
+    this.setState({ step: 0, f: this.emptyForm(), files: {}, fileErrors: {}, errors: {}, signature: null });
+  };
+
+  nomComplet(){
+    const a = (this.assurance && this.assurance.f) || {};
+    return ((a.prenom||'') + ' ' + (a.nom||'')).trim();
+  }
+
+  downloadCopy = () => {
+    const f = this.state.f;
+    const a = (this.assurance && this.assurance.f) || {};
+    const files = this.state.files;
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+    const row = (l,v) => '<tr><td style="padding:7px 12px;color:#6b6f77;font-weight:600;width:46%;vertical-align:top">'+esc(l)+'</td><td style="padding:7px 12px;color:#22252b">'+(esc(v)||'<span style=\"color:#b9b6ae\">—</span>')+'</td></tr>';
+    const sec = (t) => '<h2 style="font:700 15px Arial;color:#d9682f;margin:26px 0 6px;border-bottom:2px solid #f0ede6;padding-bottom:5px">'+t+'</h2><table style="width:100%;border-collapse:collapse;font:14px Arial">';
+    const fileList = (slot) => (files[slot]||[]).map(x=>x.name).join(', ');
+    const allFiles = ['specimen','cv','autres'].map(s=>fileList(s)).filter(Boolean).join(', ');
+    const html = '<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Dossier employé — '+esc(this.nomComplet())+'</title></head><body style="font:14px Arial;color:#22252b;max-width:720px;margin:32px auto;padding:0 20px;background:#fff">'
+      + '<div style="border-bottom:3px solid #d9682f;padding-bottom:14px;margin-bottom:8px"><h1 style="font:800 22px Arial;margin:0">Dossier employé — Partie 2</h1><p style="color:#6b6f77;margin:4px 0 0">Groupe WT Corporation · '+(esc(this.nomComplet())||'copie personnelle')+'</p></div>'
+      + '<p style="background:#fdf4ec;border:1px solid #f4dcc7;border-radius:8px;padding:10px 14px;color:#8a5a34">Astuce : appuyez sur <b>Ctrl/Cmd + P</b> pour enregistrer cette copie en PDF.</p>'
+      + sec('Paie')+(this.props.collecterNAS===false?row('NAS','Recueilli séparément par les RH'):row('NAS','•••  (fourni)'))+row('Courriel de paie',f.courrielPaie)+row('Institution',f.banque)+row('Transit',f.transit)+row('Institution (n°)',f.institution)+row('Compte','•••  (fourni)')+'</table>'
+      + sec('Contact d\u2019urgence')+row('Nom',f.urgenceNom)+row('Lien',f.urgenceLien)+row('Téléphone',f.urgenceTel)+row('2e téléphone',f.urgenceTel2)+'</table>'
+      + sec('Documents joints')+row('Fichiers',allFiles||'Aucun')+'</table>'
+      + sec('Déclaration')+row('Consentements','Les 4 cases confirmées')+row('Date de signature',this.dateSignature())+'</table>'
+      + (this.state.signature?'<p style="margin-top:18px;color:#6b6f77;font-weight:600">Signature :</p><img src="'+this.state.signature+'" style="border:1px solid #e4e1da;border-radius:8px;max-width:280px"/>':'')
+      + '</body></html>';
+    try {
+      const w = window.open('', '_blank');
+      if (w){ w.document.open(); w.document.write(html); w.document.close(); }
+      else {
+        const blob = new Blob([html], {type:'text/html'});
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a'); link.href = url; link.download = 'dossier-employe-'+(a.nom||'copie')+'.html'; link.click();
+      }
+    } catch(err){}
+  };
+
+  dateSignature(){
+    try { return new Date().toLocaleDateString('fr-CA', {year:'numeric', month:'long', day:'numeric'}); }
+    catch(e){ return new Date().toISOString().slice(0,10); }
+  }
+
+  palette(){
+    const map = {
+      'Chaleureux (orange terracotta)': {main:'#d9682f', soft:'#fdeadd'},
+      'Corporatif (bleu profond)':      {main:'#2a5db0', soft:'#e4edfb'},
+      'Sobre (vert forêt)':             {main:'#2f7d55', soft:'#e2f1e8'},
+      'Industriel (graphite)':          {main:'#3a3f47', soft:'#e9eaec'},
+    };
+    return map[this.props.accentTheme] || map['Chaleureux (orange terracotta)'];
+  }
+
+  renderVals(){
+    const step = this.state.step;
+    const titles = ['','Informations pour la paie','Contact d\u2019urgence','Documents à joindre','Consentements et signature'];
+    const pal = this.palette();
+    const collect = this.props.collecterNAS !== false;
+    const nom = this.nomComplet();
+    return {
+      step,
+      isStep0: step===0, isStep1: step===1, isStep2: step===2, isStep3: step===3,
+      isStep4: step===4, isStep5: step===5, isStep9: step===9,
+      vueRH: !!this.props.vueRH,
+      f: this.state.f,
+      e: this.state.errors,
+      accentMain: pal.main,
+      accentSoft: pal.soft,
+      hasNom: !!nom,
+      nomComplet: nom,
+      showProgress: step>=1 && step<=4,
+      showNav: step>=1 && step<=4,
+      showPrev: step>=1,
+      stepLabel: 'Étape ' + step + ' sur 4',
+      stepTitle: titles[step] || '',
+      progressPct: Math.round((Math.min(Math.max(step,1),4)/4)*100),
+      nextLabel: step===4 ? 'Envoyer le formulaire ✓' : 'Suivant →',
+      startLabel: this.hadProgress ? 'Reprendre le formulaire' : 'Commencer',
+      hasProgress: this.hadProgress,
+      savedIndicator: step>=1 && step<=4,
+      collecterNAS: collect,
+      deferNAS: !collect,
+      modeApercu: !!this.props.modeApercu,
+      dateSignature: this.dateSignature(),
+      isSending: this.state.sendState === 'sending',
+      isSent: this.state.sendState === 'sent',
+      isSendError: this.state.sendState === 'error',
+      sendError: this.state.sendError || '',
+      submissionId: this.state.submissionId || '',
+      retrySend: this.retrySend,
+      onField: this.onField, onCheck: this.onCheck, onFile: this.onFile, onRemoveFile: this.onRemoveFile,
+      next: this.next, prev: this.prev, start: this.start, goHome: this.goHome, clearAll: this.clearAll,
+      openRH: this.openRH, saveRH: this.saveRH,
+      clearSig: this.clearSig, downloadCopy: this.downloadCopy, sigRef: this.sigRef,
+      files_specimen: this.state.files.specimen || [], fileErr_specimen: this.state.fileErrors.specimen,
+      files_cv: this.state.files.cv || [], fileErr_cv: this.state.fileErrors.cv,
+      files_autres: this.state.files.autres || [], fileErr_autres: this.state.fileErrors.autres,
+    };
+  }
+}
+</script>
+</body>
+</html>
