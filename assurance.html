@@ -454,4 +454,107 @@ class Component extends DCLogic {
   prev = () => { this.setState(s => ({ step: Math.max(0, s.step - 1), errors: {} })); this.scrollTop(); };
   start = () => { this.setState({ step: 1 }); this.scrollTop(); };
   goHome = () => { this.setState({ step: 0 }); this.scrollTop(); };
-  clearAll = () =
+  clearAll = () => {
+    try { localStorage.removeItem('wt_assurance_v1'); } catch(e){}
+    this.hadProgress = false;
+    this.setState({ step: 0, f: this.emptyForm(), files: {}, fileErrors: {}, errors: {}, signature: null, assureurApprouve: false, sendState: null, sendError: null, submissionId: '' });
+  };
+
+  downloadCopy = () => {
+    const f = this.state.f;
+    const files = this.state.files;
+    const nomComplet = ((f.prenom||'') + ' ' + (f.nom||'')).trim();
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+    const row = (l,v) => '<tr><td style="padding:7px 12px;color:#6b6f77;font-weight:600;width:46%;vertical-align:top">'+esc(l)+'</td><td style="padding:7px 12px;color:#22252b">'+(esc(v)||'<span style=\"color:#b9b6ae\">—</span>')+'</td></tr>';
+    const sec = (t) => '<h2 style="font:700 15px Arial;color:#d9682f;margin:26px 0 6px;border-bottom:2px solid #f0ede6;padding-bottom:5px">'+t+'</h2><table style="width:100%;border-collapse:collapse;font:14px Arial">';
+    const fileList = (slot) => (files[slot]||[]).map(x=>x.name).join(', ');
+    const allFiles = ['permisRecto','permisVerso','dossierC5','dossierC1','wreckCert'].map(s=>fileList(s)).filter(Boolean).join(', ');
+    const compagnie = (f.compagnie==='Autre'?f.compagnieAutre:f.compagnie);
+    const departement = (f.departement==='Autre'?f.departementAutre:f.departement);
+    const permisClasse = (f.permisClasse==='Autre'?f.permisClasseAutre:f.permisClasse);
+    const html = '<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Assurance — '+esc(nomComplet)+'</title></head><body style="font:14px Arial;color:#22252b;max-width:720px;margin:32px auto;padding:0 20px;background:#fff">'
+      + '<div style="border-bottom:3px solid #d9682f;padding-bottom:14px;margin-bottom:8px"><h1 style="font:800 22px Arial;margin:0">Approbation du conducteur — Partie 1</h1><p style="color:#6b6f77;margin:4px 0 0">Groupe WT Corporation · '+(esc(nomComplet)||'copie personnelle')+'</p></div>'
+      + '<p style="background:#fdf4ec;border:1px solid #f4dcc7;border-radius:8px;padding:10px 14px;color:#8a5a34">Astuce : appuyez sur <b>Ctrl/Cmd + P</b> pour enregistrer cette copie en PDF.</p>'
+      + sec('Renseignements personnels')+row('Prénom',f.prenom)+row('Nom',f.nom)+row('Date de naissance',f.dateNaissance)+row('Adresse',f.adresse)+row('Ville',f.ville)+row('Province',f.province)+row('Code postal',f.codePostal)+row('Téléphone',f.telephone)+row('Courriel',f.courriel)+'</table>'
+      + sec('Emploi')+row('Compagnie',compagnie)+row('Poste',f.poste)+row('Date d’entrée',f.dateEntree)+row('Type d’emploi',f.typeEmploi)+row('Département',departement)+'</table>'
+      + sec('Permis et qualifications')+row('N° de permis',f.permisNumero)+row('Classe',permisClasse)+row('Date d’expiration',f.permisExpiration)+row('Mentions',f.mentions)+row('WreckMaster',f.wreckmaster)+row('CFTR',f.cftr)+row('Pocket Vert',f.pocketCAA)+row('Autres formations',f.autresFormations)+'</table>'
+      + sec('Documents joints')+row('Fichiers',allFiles||'Aucun')+'</table>'
+      + sec('Déclaration')+row('Autorisation assureur',f.consentAssurance?'Oui':'Non')+row('Consentement global',f.consentGlobal?'Oui':'Non')+row('Date de signature',this.dateSignature())+'</table>'
+      + (this.state.signature?'<p style="margin-top:18px;color:#6b6f77;font-weight:600">Signature :</p><img src="'+this.state.signature+'" style="border:1px solid #e4e1da;border-radius:8px;max-width:280px"/>':'')
+      + '</body></html>';
+    try {
+      const w = window.open('', '_blank');
+      if (w){ w.document.open(); w.document.write(html); w.document.close(); }
+      else {
+        const blob = new Blob([html], {type:'text/html'});
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a'); link.href = url; link.download = 'assurance-'+(f.nom||'copie')+'.html'; link.click();
+      }
+    } catch(err){}
+  };
+
+  dateSignature(){
+    try { return new Date().toLocaleDateString('fr-CA', {year:'numeric', month:'long', day:'numeric'}); }
+    catch(e){ return new Date().toISOString().slice(0,10); }
+  }
+
+  palette(){
+    const map = {
+      'Chaleureux (orange terracotta)': {main:'#d9682f', soft:'#fdeadd'},
+      'Corporatif (bleu profond)':      {main:'#2a5db0', soft:'#e4edfb'},
+      'Sobre (vert forêt)':             {main:'#2f7d55', soft:'#e2f1e8'},
+      'Industriel (graphite)':          {main:'#3a3f47', soft:'#e9eaec'},
+    };
+    return map[this.props.accentTheme] || map['Chaleureux (orange terracotta)'];
+  }
+
+  renderVals(){
+    const step = this.state.step;
+    const titles = ['','Renseignements personnels','Emploi','Permis et qualifications','Documents','Autorisation et signature'];
+    const pal = this.palette();
+    const f = this.state.f;
+    return {
+      step,
+      isStep0: step===0, isStep1: step===1, isStep2: step===2, isStep3: step===3,
+      isStep4: step===4, isStep5: step===5, isStep6: step===6,
+      f: this.state.f,
+      e: this.state.errors,
+      accentMain: pal.main,
+      accentSoft: pal.soft,
+      modeApercu: !!this.props.modeApercu,
+      showProgress: step>=1 && step<=5,
+      showNav: step>=1 && step<=5,
+      showPrev: step>=1,
+      stepLabel: 'Étape ' + step + ' sur 5',
+      stepTitle: titles[step] || '',
+      progressPct: Math.round((Math.min(Math.max(step,1),5)/5)*100),
+      nextLabel: step===5 ? 'Envoyer le formulaire ✓' : 'Suivant →',
+      startLabel: this.hadProgress ? 'Reprendre le formulaire' : 'Commencer',
+      hasProgress: this.hadProgress,
+      savedIndicator: step>=1 && step<=5,
+      showCompagnieAutre: f.compagnie === 'Autre',
+      showDepartementAutre: f.departement === 'Autre',
+      showPermisClasseAutre: f.permisClasse === 'Autre',
+      dateSignature: this.dateSignature(),
+      assureurApprouve: !!this.state.assureurApprouve,
+      notApprouve: !this.state.assureurApprouve,
+      isSending: this.state.sendState === 'sending',
+      isSent: this.state.sendState === 'sent',
+      isSendError: this.state.sendState === 'error',
+      sendError: this.state.sendError || '',
+      submissionId: this.state.submissionId || '',
+      retrySend: this.retrySend,
+      onField: this.onField, onCheck: this.onCheck, onApprouve: this.onApprouve, onFile: this.onFile, onRemoveFile: this.onRemoveFile,
+      next: this.next, prev: this.prev, start: this.start, goHome: this.goHome, clearAll: this.clearAll,
+      clearSig: this.clearSig, downloadCopy: this.downloadCopy, sigRef: this.sigRef,
+      files_permisRecto: this.state.files.permisRecto || [], fileErr_permisRecto: this.state.fileErrors.permisRecto,
+      files_permisVerso: this.state.files.permisVerso || [], fileErr_permisVerso: this.state.fileErrors.permisVerso,
+      files_dossierC5: this.state.files.dossierC5 || [], fileErr_dossierC5: this.state.fileErrors.dossierC5,
+      files_dossierC1: this.state.files.dossierC1 || [], fileErr_dossierC1: this.state.fileErrors.dossierC1,
+      files_wreckCert: this.state.files.wreckCert || [], fileErr_wreckCert: this.state.fileErrors.wreckCert,
+    };
+  }
+}
+</script>
+</body>
+</html>
