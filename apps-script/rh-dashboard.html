@@ -359,6 +359,25 @@
     }).join('') : '<p class="muted">Aucun document reçu pour l\'instant.</p>';
     var manqHtml = manq.length ? manq.map(function(t){ return '<span class="tag red" style="margin:3px 4px 0 0">'+esc(t)+'</span>'; }).join('') : '<span class="tag green">Aucun document manquant</span>';
 
+    // Fiche d'embauche officielle — seulement si le dossier est accepté
+    var fiche = res.fiche || {};
+    var fld = function(id,label,v){ return '<div><label>'+esc(label)+'</label><input id="'+id+'" type="text" value="'+esc(v||'')+'"></div>'; };
+    var lab = 'font-weight:700;font-size:11px;color:#9a968d;text-transform:uppercase;letter-spacing:.4px;margin:14px 0 6px';
+    var ficheHtml;
+    if (d.statut === 'Dossier accepté') {
+      ficheHtml =
+        '<h3 style="margin:22px 0 6px">Fiche d\'embauche officielle (interne)</h3>'+
+        '<div class="grid">'+ fld('fSalaire','Salaire',fiche.salaire)+ fld('fVacances','Vacances (%)',fiche.vacances)+ fld('fCourriel','Courriel de compagnie',fiche.courrielCompagnie)+ fld('fUser','Nom d\'utilisateur',fiche.utilisateur)+ fld('fPass','Mot de passe temporaire',fiche.motDePasseTemp)+ fld('fFuel','Code fuel',fiche.codeFuel)+ '</div>'+
+        '<div style="'+lab+'">Cellulaire fourni</div>'+
+        '<div class="grid">'+ fld('fCellNum','Numéro',fiche.cellNumero)+ fld('fCellMarque','Marque',fiche.cellMarque)+ fld('fCellModele','Modèle',fiche.cellModele)+ fld('fCellSerie','N° de série',fiche.cellSerie)+ '</div>'+
+        '<div style="'+lab+'">Portable fourni</div>'+
+        '<div class="grid">'+ fld('fPortMarque','Marque',fiche.portMarque)+ fld('fPortModele','Modèle',fiche.portModele)+ fld('fPortSerie','N° de série',fiche.portSerie)+ '</div>'+
+        '<p class="muted" style="font-size:12px;margin:8px 0 0">🔒 Mot de passe temporaire seulement (à changer à la 1re connexion). Restreignez l\'accès à l\'onglet <b>fiche_embauche</b>.</p>'+
+        '<div style="margin-top:10px"><button class="btn" onclick="saveFiche(\''+esc(d.token)+'\')">Enregistrer la fiche</button> <span id="ficheMsg" class="muted" style="font-size:12.5px"></span></div>';
+    } else {
+      ficheHtml = '<h3 style="margin:22px 0 6px">Fiche d\'embauche officielle</h3><p class="muted">Disponible une fois le dossier au statut « Dossier accepté » (bouton ci-dessus).</p>';
+    }
+
     document.getElementById('modal').innerHTML =
       '<div style="display:flex;align-items:center;gap:10px"><h2>'+esc(d.nom)+' '+esc(d.prenom)+'</h2><button class="close" onclick="closeDetail()">✕</button></div>'+
       '<div class="muted" style="font-size:12.5px">'+esc(d.id)+' · '+esc(d.statut)+' · '+esc(d.completion||'0 %')+'</div>'+
@@ -376,7 +395,8 @@
       '<div class="row-actions">'+
         '<button class="btn ok" onclick="validate(\''+esc(d.token)+'\',\'accepte\')">✓ Dossier accepté</button>'+
         '<button class="btn warn" onclick="validate(\''+esc(d.token)+'\',\'corriger\')">✗ Dossier à corriger</button>'+
-      '</div>';
+      '</div>'+
+      ficheHtml;
   }
 
   function saveDocStatus(row){
@@ -395,6 +415,14 @@
     var cmt=document.getElementById('valCmt').value.trim();
     google.script.run.withSuccessHandler(function(res){ if(res&&res.ok){ alert('Statut : '+res.statut); closeDetail(); loadList(); } else alert((res&&res.error)||'Échec.'); })
       .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); }).rhValidate(token, decision, cmt);
+  }
+
+  function val(id){ var el=document.getElementById(id); return el?el.value.trim():''; }
+  function saveFiche(token){
+    var data={ salaire:val('fSalaire'), vacances:val('fVacances'), courrielCompagnie:val('fCourriel'), utilisateur:val('fUser'), motDePasseTemp:val('fPass'), codeFuel:val('fFuel'), cellNumero:val('fCellNum'), cellMarque:val('fCellMarque'), cellModele:val('fCellModele'), cellSerie:val('fCellSerie'), portMarque:val('fPortMarque'), portModele:val('fPortModele'), portSerie:val('fPortSerie') };
+    var m=document.getElementById('ficheMsg'); if(m) m.textContent='Enregistrement…';
+    google.script.run.withSuccessHandler(function(res){ if(m) m.textContent=(res&&res.ok)?'✓ Enregistré':((res&&res.error)||'Échec'); })
+      .withFailureHandler(function(e){ if(m) m.textContent=String(e&&e.message?e.message:e); }).rhSaveFiche(token, data);
   }
 
   function copyText(txt, btn){

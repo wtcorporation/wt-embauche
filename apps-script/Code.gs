@@ -86,6 +86,16 @@ const DOCS_REQUIS_PAR_POSTE = {
 };
 const DOCS_REQUIS_DEFAUT = ["Permis recto", "Permis verso", "Specimen cheque"];
 
+// Fiche d'embauche officielle (remplie par RH une fois le dossier accepté).
+// ⚠️ Onglet à ACCÈS RESTREINT : contient rémunération et identifiants. On n'y
+// stocke qu'un mot de passe TEMPORAIRE (à changer à la 1re connexion).
+const SHEET_FICHE = "fiche_embauche";
+const COLONNES_FICHE = ["ID invitation", "Token", "Salaire", "Vacances (%)",
+  "Cellulaire - numéro", "Cellulaire - marque", "Cellulaire - modèle", "Cellulaire - n° série",
+  "Portable - marque", "Portable - modèle", "Portable - n° série",
+  "Courriel compagnie", "Nom d'utilisateur", "Mot de passe temporaire", "Code fuel",
+  "Mis à jour par", "Date"];
+
 // ============================== POINT D'ENTRÉE ==============================
 
 function doPost(e) {
@@ -862,7 +872,7 @@ function rhGetDossier(token) {
   }
   var requis = docsRequisPour_(rec.poste);
   var manquants = requis.filter(function (t) { return !typesRecus[t]; });
-  return { ok: true, dossier: rec, documentsRecus: recus, documentsRequis: requis, documentsManquants: manquants, statutsDoc: STATUTS_DOC };
+  return { ok: true, dossier: rec, documentsRecus: recus, documentsRequis: requis, documentsManquants: manquants, statutsDoc: STATUTS_DOC, fiche: ficheFor_(rec.token) };
 }
 
 /** RH — change le statut d'un document reçu (par n° de ligne fourni par rhGetDossier). */
@@ -904,6 +914,57 @@ function generateRecapPdf_(folder, data, employeeName) {
   var pdf = Utilities.newBlob(html, "text/html", "tmp.html").getAs("application/pdf")
     .setName("Recapitulatif " + (data.type || "") + " - " + employeeName + ".pdf");
   createFileWithVersioning_(folder, pdf, pdf.getName());
+}
+
+// ==================== V2 — FICHE D'EMBAUCHE OFFICIELLE ====================
+
+function getFicheSheet_() { return getOrCreateSheet_(getSpreadsheet_(), SHEET_FICHE, COLONNES_FICHE); }
+
+function ficheRowByToken_(token) {
+  var sheet = getFicheSheet_();
+  var vals = sheet.getDataRange().getValues();
+  for (var r = 1; r < vals.length; r++) {
+    if (String(vals[r][1]) === String(token)) return { sheet: sheet, rowIndex: r + 1, values: vals[r] };
+  }
+  return null;
+}
+
+function ficheToObject_(v) {
+  return {
+    salaire: v[2], vacances: v[3],
+    cellNumero: v[4], cellMarque: v[5], cellModele: v[6], cellSerie: v[7],
+    portMarque: v[8], portModele: v[9], portSerie: v[10],
+    courrielCompagnie: v[11], utilisateur: v[12], motDePasseTemp: v[13], codeFuel: v[14],
+    majPar: v[15], majDate: v[16]
+  };
+}
+
+function ficheFor_(token) { var f = ficheRowByToken_(token); return f ? ficheToObject_(f.values) : {}; }
+
+/** RH — lit la fiche d'embauche officielle d'un dossier. */
+function rhGetFiche(token) { requireRH_(); return { ok: true, fiche: ficheFor_(token) }; }
+
+/** RH — enregistre (upsert) la fiche d'embauche officielle. */
+function rhSaveFiche(token, data) {
+  var user = requireRH_();
+  data = data || {};
+  var found = invitationRowByToken_(token);
+  if (!found) return { ok: false, error: "Invitation introuvable." };
+  var idInv = found.values[0];
+  var row = [
+    idInv, token,
+    String(data.salaire || ""), String(data.vacances || ""),
+    String(data.cellNumero || ""), String(data.cellMarque || ""), String(data.cellModele || ""), String(data.cellSerie || ""),
+    String(data.portMarque || ""), String(data.portModele || ""), String(data.portSerie || ""),
+    String(data.courrielCompagnie || ""), String(data.utilisateur || ""), String(data.motDePasseTemp || ""), String(data.codeFuel || ""),
+    user, new Date()
+  ];
+  var existing = ficheRowByToken_(token);
+  var sheet = getFicheSheet_();
+  if (existing) sheet.getRange(existing.rowIndex, 1, 1, row.length).setValues([row]);
+  else sheet.appendRow(row);
+  logActivite_(idInv, "Fiche d'embauche mise à jour", "", user);
+  return { ok: true };
 }
 
 // ============================== TEST MANUEL ==============================
