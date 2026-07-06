@@ -1,0 +1,35 @@
+# ============================================================
+#  WT Corporation — Formulaire d'embauche (site statique)
+#  Aucun build : on versionne les fichiers tels quels.
+#  On ignore surtout les archives de transfert et les
+#  fichiers générés par l'OS / les éditeurs.
+# ============================================================
+
+# Archives de transfert (handoff) — ne pas versionner
+*.zip
+*.7z
+*.rar
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+desktop.ini
+$RECYCLE.BIN/
+
+# Éditeurs / IDE
+.vscode/
+.idea/
+*.swp
+*~
+*.bak
+
+# Journaux et temporaires
+*.log
+*.tmp
+
+# Secrets éventuels (ne JAMAIS committer de secret ; config.js
+# ne contient que l'URL publique Apps Script et reste suivi)
+.env
+.env.*
