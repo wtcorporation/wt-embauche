@@ -30,6 +30,7 @@ Google Apps Script (/exec) — backend, compte RH
 | `config.js` | **À configurer** : URL `/exec` du Google Apps Script |
 | `assets/logo-wt.png` | Logo |
 | `apps-script/Code.gs` | Backend à coller dans Google Apps Script (ne s'exécute pas sur GitHub) |
+| `apps-script/rh-dashboard.html` | **Portail RH** interne, servi par Apps Script (HtmlService) — invitations + suivi. À déployer en 2ᵉ application Web (voir `docs/PORTAIL_RH.md`) |
 | `docs/` | Guides de déploiement, configuration et tests |
 | `.nojekyll` | Désactive Jekyll sur GitHub Pages |
 
@@ -39,6 +40,18 @@ Google Apps Script (/exec) — backend, compte RH
 2. **Coller l'URL `/exec`** dans `config.js` (`SCRIPT_URL`).
 3. **Publier sur GitHub Pages** : suivre [`docs/GUIDE_DEPLOIEMENT.md`](docs/GUIDE_DEPLOIEMENT.md).
 4. **Tester avant production** : suivre [`docs/TESTS_AVANT_PRODUCTION.md`](docs/TESTS_AVANT_PRODUCTION.md).
+
+## Portail RH — invitations et suivi (V1)
+
+Le portail RH (`apps-script/rh-dashboard.html`) permet à RH de **créer une invitation**, d'**envoyer un lien personnalisé** au nouvel employé et de **suivre son cheminement**. Il est servi par Apps Script (HtmlService), **pas** par GitHub Pages, et protégé par l'authentification Google Workspace + une liste blanche de courriels. Détails et déploiement : **[`docs/PORTAIL_RH.md`](docs/PORTAIL_RH.md)**.
+
+**Flux :** RH crée l'invitation → le backend génère un token unique (`WT-EMP-AAAAMMJJ-NNNN` + suffixe aléatoire), crée le dossier Drive et la ligne de suivi → RH envoie le lien par courriel/SMS → l'employé ouvre `…/?token=…` (préremplissage) → remplit et soumet → RH voit le statut passer à « Formulaire complété » et valide.
+
+**Statuts :** Brouillon · Invitation envoyée · Lien ouvert · Formulaire commencé · Formulaire incomplet · Documents partiellement reçus · Formulaire complété · En validation RH · Dossier accepté · Dossier à corriger · Archivé.
+
+**Onglets Sheets ajoutés (créés automatiquement) :** `invitations_embauche`, `journal_activite` (+ `soumissions_globales` et `erreurs` existants).
+
+> ⚠️ **Sécurité, honnêtement :** GitHub Pages est public — on **ne peut pas** y sécuriser un portail RH. C'est pourquoi le dashboard vit dans Apps Script (authentifié). Le token employé est une « URL-capacité » (non devinable) : suffisant pour le formulaire employé, jamais pour la gestion RH.
 
 ## Sécurité et confidentialité
 

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<base target="_top">
+<style>
+  :root{ --accent:#d9682f; --accent-soft:#fdeadd; --bg:#f2efe8; --ink:#22252b; --muted:#6b6f77; --line:#eae7df; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Nunito Sans',system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,label,button,.tag{font-family:'Figtree','Nunito Sans',system-ui,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:22px 16px 60px}
+  header.top{display:flex;align-items:center;gap:14px;padding:8px 4px 20px}
+  header.top .brand{font-weight:800;font-size:18px}
+  header.top .who{margin-left:auto;font-size:13px;color:var(--muted)}
+  .card{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 22px 60px -40px rgba(40,36,30,.5);padding:22px;margin-bottom:22px}
+  h2{font-size:18px;margin:0 0 14px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+  label{display:block;font-weight:600;font-size:13px;color:#3a3e45;margin-bottom:5px}
+  input,select,textarea{width:100%;padding:11px 13px;font-family:inherit;font-size:14.5px;color:var(--ink);background:#fff;border:1.6px solid #e4e1da;border-radius:10px;outline:none}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+  textarea{min-height:70px;resize:vertical}
+  .chk{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;font-weight:600;color:#3a3e45;margin:0}
+  .chk input{width:auto}
+  .docs{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:4px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 20px;font-weight:700;font-size:14.5px;color:#fff;background:var(--accent);border:none;border-radius:11px;cursor:pointer}
+  .btn.sec{color:#3a3e45;background:#fff;border:1.6px solid #e0ddd6}
+  .btn.sm{padding:7px 12px;font-size:12.5px;border-radius:9px}
+  .btn:disabled{opacity:.5;cursor:default}
+  .row-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid #f0ede6;vertical-align:top}
+  th{font-family:'Figtree',sans-serif;font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;color:#9a968d;white-space:nowrap}
+  .tablewrap{overflow-x:auto}
+  .tag{display:inline-block;font-weight:700;font-size:11.5px;padding:3px 9px;border-radius:99px;background:#f0ede6;color:#6b6f77;white-space:nowrap}
+  .muted{color:var(--muted)}
+  a{color:#2a5db0}
+  .msg{padding:12px 15px;border-radius:11px;font-size:14px;margin:0 0 14px;display:none}
+  .msg.ok{background:#eaf6ef;color:#256b43;border:1px solid #cfe9d8;display:block}
+  .msg.err{background:#fdecea;color:#b23b32;border:1px solid #f2c9c4;display:block}
+  .result{background:#f0f4fb;border:1px solid #d7e0f0;border-radius:13px;padding:15px;margin-top:8px;display:none}
+  .result code{display:block;background:#fff;border:1px solid #d7e0f0;border-radius:8px;padding:9px 11px;font-size:12.5px;word-break:break-all;margin:5px 0 10px}
+  #gate{max-width:520px;margin:60px auto;text-align:center}
+  .spin{color:var(--muted);font-size:14px;padding:8px 0}
+</style>
+</head>
+<body>
+
+<!-- Écran d'accès refusé / chargement -->
+<div id="gate" class="card" style="display:none">
+  <h2 id="gateTitle">Portail RH — WT Corporation</h2>
+  <p id="gateMsg" class="muted">Vérification de votre accès…</p>
+</div>
+
+<!-- Application -->
+<div id="app" class="wrap" style="display:none">
+  <header class="top">
+    <span class="brand">Portail RH — Embauche WT Corporation</span>
+    <span class="who" id="who"></span>
+  </header>
+
+  <!-- Créer une invitation -->
+  <section class="card">
+    <h2>Nouvelle invitation d'embauche</h2>
+    <div id="createMsg" class="msg"></div>
+    <div class="grid">
+      <div><label>Prénom *</label><input id="prenom" type="text"></div>
+      <div><label>Nom *</label><input id="nom" type="text"></div>
+      <div><label>Courriel</label><input id="courriel" type="email" placeholder="employe@exemple.com"></div>
+      <div><label>Téléphone</label><input id="telephone" type="tel"></div>
+      <div>
+        <label>Compagnie</label>
+        <select id="compagnie">
+          <option value="">Choisir…</option>
+          <option>Groupe WT Corporation</option>
+          <option>Remorquage PDR 2011 inc.</option>
+          <option>Livraison Primus inc.</option>
+          <option>Remorquage Bean &amp; Fille</option>
+          <option>Remorquage M&amp;M</option>
+          <option>Entreprises affiliées</option>
+        </select>
+      </div>
+      <div>
+        <label>Poste</label>
+        <select id="poste" onchange="togglePosteAutre()">
+          <option value="">Choisir…</option>
+          <option>Chauffeur plateforme</option>
+          <option>Chauffeur lourd</option>
+          <option>Chauffeur classe 1</option>
+          <option>Répartiteur</option>
+          <option>Mécanicien</option>
+          <option>Administration</option>
+          <option>Gestionnaire</option>
+          <option value="Autre">Autre</option>
+        </select>
+      </div>
+      <div id="posteAutreWrap" style="display:none"><label>Préciser le poste</label><input id="posteAutre" type="text"></div>
+      <div><label>Date prévue d'entrée</label><input id="dateEntree" type="date"></div>
+      <div><label>Gestionnaire responsable</label><input id="gestionnaire" type="text"></div>
+    </div>
+    <div style="margin-top:14px"><label>Notes internes RH (non visibles par l'employé)</label><textarea id="notes"></textarea></div>
+    <div style="margin-top:14px">
+      <label>Documents requis (ajoutés aux notes internes)</label>
+      <div class="docs" id="docsReq">
+        <label class="chk"><input type="checkbox" value="Permis recto"> Permis recto</label>
+        <label class="chk"><input type="checkbox" value="Permis verso"> Permis verso</label>
+        <label class="chk"><input type="checkbox" value="Dossier de conduite"> Dossier de conduite</label>
+        <label class="chk"><input type="checkbox" value="Spécimen de chèque"> Spécimen de chèque</label>
+        <label class="chk"><input type="checkbox" value="Documents d'assurance"> Documents d'assurance</label>
+        <label class="chk"><input type="checkbox" value="Certificat WreckMaster"> Certificat WreckMaster</label>
+        <label class="chk"><input type="checkbox" value="CV"> CV</label>
+      </div>
+    </div>
+    <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+      <label class="chk"><input id="envoyerCourriel" type="checkbox" checked> Envoyer le courriel d'invitation maintenant</label>
+      <button class="btn" id="btnCreate" onclick="createInvitation()">Créer l'invitation</button>
+    </div>
+
+    <div id="result" class="result">
+      <div style="font-weight:800;color:#2a5db0;margin-bottom:6px">✓ Invitation créée</div>
+      <label>Lien du formulaire</label>
+      <code id="rLink"></code>
+      <label>Message SMS (prêt à copier)</label>
+      <code id="rSms"></code>
+      <div class="row-actions">
+        <button class="btn sm" onclick="copyText(document.getElementById('rLink').textContent, this)">Copier le lien</button>
+        <button class="btn sm sec" onclick="copyText(document.getElementById('rSms').textContent, this)">Copier le SMS</button>
+        <a class="btn sm sec" id="rDrive" href="#" target="_blank" style="text-decoration:none">📁 Dossier Drive</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Liste des dossiers -->
+  <section class="card">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+      <h2 style="margin:0">Dossiers d'embauche</h2>
+      <button class="btn sm sec" onclick="loadList()" style="margin-left:auto">↻ Actualiser</button>
+    </div>
+    <div id="listMsg" class="spin">Chargement…</div>
+    <div class="tablewrap">
+      <table id="tbl" style="display:none">
+        <thead><tr>
+          <th>Employé</th><th>Contact</th><th>Compagnie / Poste</th>
+          <th>Créée</th><th>Dernière activité</th><th>Statut</th><th>%</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script>
+  var STATUTS = [];
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function fmt(d){ if(!d) return ''; try{ var x=new Date(d); if(isNaN(x)) return String(d); return x.toLocaleString('fr-CA',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}); }catch(e){ return String(d); } }
+  function show(id,cls,txt){ var el=document.getElementById(id); el.className=(id==='listMsg'?'':'msg ')+cls; el.textContent=txt; el.style.display='block'; }
+
+  // -------- Authentification --------
+  window.addEventListener('load', function(){
+    document.getElementById('gate').style.display='block';
+    google.script.run.withSuccessHandler(onWho).withFailureHandler(onFatal).rhWhoAmI();
+  });
+  function onWho(res){
+    if(res && res.ok){
+      STATUTS = res.statuts || [];
+      document.getElementById('gate').style.display='none';
+      document.getElementById('app').style.display='block';
+      document.getElementById('who').textContent='Connecté : '+res.email;
+      loadList();
+    } else {
+      document.getElementById('gateTitle').textContent='Accès refusé';
+      document.getElementById('gateMsg').textContent=(res && res.error) || "Vous n'êtes pas autorisé à accéder à ce portail.";
+    }
+  }
+  function onFatal(err){
+    document.getElementById('gate').style.display='block';
+    document.getElementById('gateTitle').textContent='Erreur';
+    document.getElementById('gateMsg').textContent=String(err && err.message ? err.message : err);
+  }
+
+  function togglePosteAutre(){
+    document.getElementById('posteAutreWrap').style.display = (document.getElementById('poste').value==='Autre')?'block':'none';
+  }
+
+  // -------- Créer une invitation --------
+  function createInvitation(){
+    var poste = document.getElementById('poste').value;
+    if(poste==='Autre') poste = document.getElementById('posteAutre').value.trim();
+    var docs=[]; document.querySelectorAll('#docsReq input:checked').forEach(function(c){ docs.push(c.value); });
+    var notes = document.getElementById('notes').value.trim();
+    if(docs.length) notes = (notes?notes+'\n':'')+'Documents requis : '+docs.join(', ');
+
+    var payload = {
+      prenom: document.getElementById('prenom').value.trim(),
+      nom: document.getElementById('nom').value.trim(),
+      courriel: document.getElementById('courriel').value.trim(),
+      telephone: document.getElementById('telephone').value.trim(),
+      compagnie: document.getElementById('compagnie').value,
+      poste: poste,
+      dateEntree: document.getElementById('dateEntree').value,
+      gestionnaire: document.getElementById('gestionnaire').value.trim(),
+      notes: notes,
+      envoyerCourriel: document.getElementById('envoyerCourriel').checked
+    };
+    if(!payload.prenom || !payload.nom){ show('createMsg','err','Le prénom et le nom sont requis.'); return; }
+
+    var btn=document.getElementById('btnCreate'); btn.disabled=true; btn.textContent='Création…';
+    document.getElementById('createMsg').style.display='none';
+    google.script.run
+      .withSuccessHandler(function(res){
+        btn.disabled=false; btn.textContent="Créer l'invitation";
+        if(!res || !res.ok){ show('createMsg','err',(res&&res.error)||'Échec de la création.'); return; }
+        show('createMsg','ok','Invitation '+res.invitationId+' créée'+(res.courrielEnvoye?' et courriel envoyé.':'.'));
+        document.getElementById('rLink').textContent=res.lien;
+        document.getElementById('rSms').textContent=res.sms;
+        var d=document.getElementById('rDrive'); d.href=res.lienDrive||'#';
+        document.getElementById('result').style.display='block';
+        clearForm();
+        loadList();
+      })
+      .withFailureHandler(function(err){
+        btn.disabled=false; btn.textContent="Créer l'invitation";
+        show('createMsg','err',String(err && err.message ? err.message : err));
+      })
+      .rhCreateInvitation(payload);
+  }
+  function clearForm(){
+    ['prenom','nom','courriel','telephone','dateEntree','gestionnaire','notes','posteAutre'].forEach(function(id){ document.getElementById(id).value=''; });
+    document.getElementById('compagnie').value=''; document.getElementById('poste').value='';
+    togglePosteAutre();
+    document.querySelectorAll('#docsReq input:checked').forEach(function(c){ c.checked=false; });
+  }
+
+  // -------- Liste --------
+  function loadList(){
+    document.getElementById('listMsg').style.display='block';
+    document.getElementById('listMsg').textContent='Chargement…';
+    document.getElementById('tbl').style.display='none';
+    google.script.run
+      .withSuccessHandler(function(res){
+        if(!res || !res.ok){ document.getElementById('listMsg').textContent=(res&&res.error)||'Erreur de chargement.'; return; }
+        renderList(res.invitations||[]);
+      })
+      .withFailureHandler(function(err){ document.getElementById('listMsg').textContent=String(err && err.message ? err.message : err); })
+      .rhListInvitations();
+  }
+  function statusSelect(inv){
+    var o = STATUTS.map(function(s){ return '<option'+(s===inv.statut?' selected':'')+'>'+esc(s)+'</option>'; }).join('');
+    return '<select class="btn sm sec" style="color:#3a3e45;padding:6px 8px" onchange="setStatus(\''+esc(inv.token)+'\', this.value)">'+o+'</select>';
+  }
+  function renderList(list){
+    document.getElementById('listMsg').style.display='none';
+    var tb=document.getElementById('tbody'); tb.innerHTML='';
+    if(!list.length){ document.getElementById('listMsg').style.display='block'; document.getElementById('listMsg').textContent='Aucune invitation pour l\'instant.'; return; }
+    list.slice().reverse().forEach(function(inv){
+      var tr=document.createElement('tr');
+      tr.innerHTML =
+        '<td><strong>'+esc(inv.nom)+' '+esc(inv.prenom)+'</strong><br><span class="muted" style="font-size:11.5px">'+esc(inv.id)+'</span></td>'+
+        '<td>'+esc(inv.courriel||'—')+'<br><span class="muted">'+esc(inv.telephone||'')+'</span></td>'+
+        '<td>'+esc(inv.compagnie||'—')+'<br><span class="muted">'+esc(inv.poste||'')+'</span></td>'+
+        '<td>'+esc(fmt(inv.dateCreation))+'</td>'+
+        '<td>'+esc(fmt(inv.derniereActivite))+'</td>'+
+        '<td>'+statusSelect(inv)+'</td>'+
+        '<td><span class="tag">'+esc(inv.completion||'0 %')+'</span></td>'+
+        '<td><div class="row-actions">'+
+          '<button class="btn sm sec" onclick="copyText(\''+esc(inv.lienFormulaire)+'\', this)">Lien</button>'+
+          '<button class="btn sm sec" onclick="resend(\''+esc(inv.token)+'\')">Relancer</button>'+
+          '<button class="btn sm sec" onclick="addNote(\''+esc(inv.token)+'\')">Note</button>'+
+          (inv.lienDrive?'<a class="btn sm sec" style="text-decoration:none" target="_blank" href="'+esc(inv.lienDrive)+'">Drive</a>':'')+
+        '</div></td>';
+      tb.appendChild(tr);
+    });
+    document.getElementById('tbl').style.display='';
+  }
+
+  // -------- Actions ligne --------
+  function setStatus(token, statut){
+    google.script.run.withSuccessHandler(function(res){ if(!res||!res.ok) alert((res&&res.error)||'Échec.'); })
+      .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); }).rhUpdateStatus(token, statut);
+  }
+  function resend(token){
+    if(!confirm('Envoyer un courriel de relance à cet employé ?')) return;
+    google.script.run.withSuccessHandler(function(res){ alert(res&&res.ok?'Relance envoyée.':((res&&res.error)||'Échec.')); loadList(); })
+      .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); }).rhResendInvitation(token);
+  }
+  function addNote(token){
+    var note=prompt('Note interne (visible RH seulement) :');
+    if(!note) return;
+    google.script.run.withSuccessHandler(function(res){ if(res&&res.ok){ alert('Note ajoutée.'); } else { alert((res&&res.error)||'Échec.'); } })
+      .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); }).rhAddNote(token, note);
+  }
+
+  // -------- Utilitaires --------
+  function copyText(txt, btn){
+    var done=function(){ var t=btn.textContent; btn.textContent='✓ Copié'; setTimeout(function(){ btn.textContent=t; },1500); };
+    try{ navigator.clipboard.writeText(txt).then(done, done); }catch(e){ done(); }
+  }
+</script>
+</body>
+</html>

@@ -464,6 +464,7 @@ class Component extends DCLogic {
     });
     return {
       type:'documents', submittedAt:new Date().toISOString(),
+      token:(function(){try{return localStorage.getItem('wt_token')||'';}catch(e){return '';}})(),
       nom:f.nom||'', prenom:f.prenom||'', courriel:f.courriel||'',
       data:{
         employe:((f.prenom||'')+' '+(f.nom||'')).trim(), poste:f.poste, entreprise:f.entreprise,

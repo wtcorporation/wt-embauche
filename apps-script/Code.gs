@@ -40,6 +40,32 @@ const ONGLETS_PAR_TYPE = {
 
 const EXTENSIONS_PERMISES = ["pdf", "jpg", "jpeg", "png", "heic"];
 
+// ===================== PORTAIL RH — INVITATIONS (V1) =====================
+// Courriels autorisés à utiliser le tableau de bord RH (vérifiés côté serveur
+// via Session.getActiveUser()). À déployer en « Exécuter comme moi · Accès :
+// tout le monde dans le domaine wtcorporation.ca ».
+const RH_ALLOWLIST = ["m.lambert@wtcorporation.ca", "rh@wtcorporation.ca"];
+// Base publique du formulaire employé (sert à construire les liens d'invitation).
+const PUBLIC_FORM_BASE_URL = "https://wtcorporation.github.io/wt-embauche/";
+
+const SHEET_INVITATIONS = "invitations_embauche";
+const SHEET_JOURNAL = "journal_activite";
+
+const COLONNES_INVITATIONS = [
+  "ID invitation", "Token", "Date création", "Créé par", "Prénom", "Nom",
+  "Courriel", "Téléphone", "Compagnie", "Poste", "Date entrée prévue",
+  "Gestionnaire", "Statut", "% complétion", "Dernière activité",
+  "Lien formulaire", "Lien dossier Drive", "Notes internes"
+];
+const COLONNES_JOURNAL = ["Date/heure", "ID invitation", "Action", "Détail", "Utilisateur ou système"];
+
+// Cheminement d'un dossier d'embauche (ordre = progression).
+const STATUTS = [
+  "Brouillon", "Invitation envoyée", "Lien ouvert", "Formulaire commencé",
+  "Formulaire incomplet", "Documents partiellement reçus", "Formulaire complété",
+  "En validation RH", "Dossier accepté", "Dossier à corriger", "Archivé"
+];
+
 // ============================== POINT D'ENTRÉE ==============================
 
 function doPost(e) {
@@ -54,32 +80,15 @@ function doPost(e) {
       return jsonResponse_({ ok: false, error: "Format de données invalide (JSON attendu)." });
     }
 
-    // --- Validation minimale ---
-    var nom = String(data.nom || "").trim();
-    var prenom = String(data.prenom || "").trim();
-    if (!nom || !prenom) {
-      return jsonResponse_({ ok: false, error: "Le nom et le prénom sont requis pour créer le dossier employé." });
-    }
-
-    var validationFichiers = validerFichiers_(data.fichiers || []);
-    if (validationFichiers) {
-      return jsonResponse_({ ok: false, error: validationFichiers });
-    }
-
-    // --- Traitement ---
-    var submissionId = nextSubmissionId_();
-    var folder = getOrCreateEmployeeFolder(nom, prenom);
-    var employeeName = folder.getName(); // « NOM Prénom » normalisé
-
-    var savedFiles = saveAttachments_(folder, data, employeeName);
-    logToSheets_(data, submissionId, folder, savedFiles);
-    notifyRH_(data, submissionId, folder, savedFiles, employeeName);
-
-    return jsonResponse_({
-      ok: true,
-      submissionId: submissionId,
-      employeeFolderUrl: folder.getUrl()
-    });
+    // --- Routage par action (défaut = soumission finale) ---
+    // Actions PUBLIQUES (protégées par un token unique) appelées par le
+    // formulaire employé. Les actions RH ne passent PAS par ici : elles sont
+    // appelées via google.script.run depuis le tableau de bord authentifié.
+    var action = String(data.action || "submit");
+    if (action === "lookupToken")   return jsonResponse_(lookupToken_(data));
+    if (action === "updateProgress") return jsonResponse_(updateProgress_(data));
+    if (action === "submit")         return jsonResponse_(handleSubmit_(data, e));
+    return jsonResponse_({ ok: false, error: "Action inconnue : " + action });
 
   } catch (err) {
     logError_(err, e);
@@ -87,8 +96,48 @@ function doPost(e) {
   }
 }
 
-// Permet de vérifier rapidement que le déploiement répond (GET dans le navigateur).
-function doGet() {
+// Soumission finale du formulaire employé (comportement d'origine, inchangé,
+// + rattachement à l'invitation RH si un token est fourni).
+function handleSubmit_(data, e) {
+  var nom = String(data.nom || "").trim();
+  var prenom = String(data.prenom || "").trim();
+  if (!nom || !prenom) {
+    return { ok: false, error: "Le nom et le prénom sont requis pour créer le dossier employé." };
+  }
+
+  var validationFichiers = validerFichiers_(data.fichiers || []);
+  if (validationFichiers) {
+    return { ok: false, error: validationFichiers };
+  }
+
+  var submissionId = nextSubmissionId_();
+  var folder = getOrCreateEmployeeFolder(nom, prenom);
+  var employeeName = folder.getName(); // « NOM Prénom » normalisé
+
+  var savedFiles = saveAttachments_(folder, data, employeeName);
+  logToSheets_(data, submissionId, folder, savedFiles);
+  notifyRH_(data, submissionId, folder, savedFiles, employeeName);
+
+  // Rattachement à l'invitation RH (si un token accompagne la soumission).
+  if (data.token) {
+    try { markInvitationSubmitted_(data.token, folder, submissionId, data.type); }
+    catch (e2) { logError_(e2, e, "markInvitationSubmitted_"); }
+  }
+
+  return { ok: true, submissionId: submissionId, employeeFolderUrl: folder.getUrl() };
+}
+
+// GET : sert le tableau de bord RH (?page=dashboard) ou un simple health check.
+// Le dashboard doit être déployé en application Web « Exécuter comme moi ·
+// Accès : tout le monde dans le domaine » pour que Session.getActiveUser()
+// identifie l'utilisateur RH (voir requireRH_).
+function doGet(e) {
+  var page = (e && e.parameter && e.parameter.page) || "";
+  if (page === "dashboard") {
+    return HtmlService.createHtmlOutputFromFile("rh-dashboard")
+      .setTitle("Portail RH — Embauche WT Corporation")
+      .addMetaTag("viewport", "width=device-width, initial-scale=1");
+  }
   return jsonResponse_({ ok: true, service: "WT Corporation — réception des formulaires d'embauche", version: "2.0" });
 }
 
@@ -465,6 +514,271 @@ function notifyRH_(data, submissionId, folder, savedFiles, employeeName) {
     subject: sujet,
     htmlBody: html
   });
+}
+
+// ==================== PORTAIL RH — SÉCURITÉ & AUTH ====================
+
+/**
+ * Vérifie que l'utilisateur courant fait partie de la liste blanche RH.
+ * Appelée en tête de CHAQUE fonction RH (google.script.run). Lève une
+ * exception si l'appelant n'est pas autorisé. Retourne son courriel.
+ */
+function requireRH_() {
+  var email = "";
+  try { email = (Session.getActiveUser() && Session.getActiveUser().getEmail()) || ""; } catch (e) { email = ""; }
+  email = String(email).toLowerCase();
+  var allow = RH_ALLOWLIST.map(function (x) { return String(x).toLowerCase(); });
+  if (!email || allow.indexOf(email) === -1) {
+    throw new Error("Accès refusé — réservé au département RH (compte : " + (email || "non authentifié") + ").");
+  }
+  return email;
+}
+
+/** Indique au dashboard qui est connecté (ou null si non autorisé). */
+function rhWhoAmI() {
+  try { return { ok: true, email: requireRH_(), statuts: STATUTS }; }
+  catch (e) { return { ok: false, error: String(e && e.message ? e.message : e) }; }
+}
+
+// ==================== PORTAIL RH — INVITATIONS ====================
+
+/** Compteur quotidien dédié aux invitations : WT-EMP-YYYYMMDD-NNNN. */
+function nextInvitationId_() {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var today = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || "America/Toronto", "yyyyMMdd");
+    var key = "SEQEMP_" + today;
+    var seq = parseInt(props.getProperty(key) || "0", 10) + 1;
+    props.setProperty(key, String(seq));
+    return "WT-EMP-" + today + "-" + ("0000" + seq).slice(-4);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** Token = ID lisible + suffixe aléatoire (impossible à deviner/énumérer). */
+function generateToken_(invitationId) {
+  var rand = Utilities.getUuid().replace(/-/g, "").substring(0, 10);
+  return invitationId + "-" + rand;
+}
+
+function buildFormLink_(token) {
+  var base = PUBLIC_FORM_BASE_URL;
+  if (base.charAt(base.length - 1) !== "/") base += "/";
+  return base + "?token=" + encodeURIComponent(token);
+}
+
+function buildSmsMessage_(prenom, lien) {
+  return "Bonjour " + (prenom || "") + ", voici votre lien pour compléter votre dossier d'embauche WT Corporation : " + lien + ". Merci de le remplir dès que possible.";
+}
+
+function getInvitationsSheet_() {
+  return getOrCreateSheet_(getSpreadsheet_(), SHEET_INVITATIONS, COLONNES_INVITATIONS);
+}
+
+function invitationRowByToken_(token) {
+  var sheet = getInvitationsSheet_();
+  var values = sheet.getDataRange().getValues();
+  for (var r = 1; r < values.length; r++) {
+    if (String(values[r][1]) === String(token)) {
+      return { sheet: sheet, rowIndex: r + 1, values: values[r] };
+    }
+  }
+  return null;
+}
+
+function invitationToObject_(v) {
+  return {
+    id: v[0], token: v[1], dateCreation: v[2], creePar: v[3], prenom: v[4], nom: v[5],
+    courriel: v[6], telephone: v[7], compagnie: v[8], poste: v[9], dateEntree: v[10],
+    gestionnaire: v[11], statut: v[12], completion: v[13], derniereActivite: v[14],
+    lienFormulaire: v[15], lienDrive: v[16], notes: v[17]
+  };
+}
+
+function setInvitationField_(token, colName, value) {
+  var found = invitationRowByToken_(token);
+  if (!found) return false;
+  var col = COLONNES_INVITATIONS.indexOf(colName) + 1;
+  if (col < 1) return false;
+  found.sheet.getRange(found.rowIndex, col).setValue(value);
+  return true;
+}
+
+function logActivite_(idInvitation, action, detail, user) {
+  try {
+    var sheet = getOrCreateSheet_(getSpreadsheet_(), SHEET_JOURNAL, COLONNES_JOURNAL);
+    sheet.appendRow([new Date(), idInvitation || "", action || "", detail || "", user || "système"]);
+  } catch (e) { /* journal non bloquant */ }
+}
+
+/** Courriel d'invitation ou de relance (Gmail/Workspace via MailApp). */
+function sendInvitationEmail_(rec, isRelance, manquants) {
+  var prenom = rec.prenom || "";
+  var lien = rec.lienFormulaire;
+  var sujet = isRelance
+    ? "Rappel — votre formulaire d'embauche WT Corporation"
+    : "Votre formulaire d'embauche - WT Corporation";
+  var intro = isRelance
+    ? "Petit rappel concernant votre dossier d'embauche WT Corporation."
+    : "Bienvenue chez WT Corporation.<br><br>Afin de compléter votre dossier d'embauche, veuillez remplir le formulaire sécurisé en utilisant le lien ci-dessous.";
+  var manquantsHtml = (isRelance && manquants && manquants.length)
+    ? "<p style='font-family:Arial;font-size:14px;margin:0 0 6px'>Il manque encore certains éléments à compléter :</p><ul style='font-family:Arial;font-size:14px;margin:0 0 10px'>" + manquants.map(function (m) { return "<li>" + m + "</li>"; }).join("") + "</ul>"
+    : "";
+  var html =
+    "<div style='font-family:Arial;font-size:14px;color:#22252b;line-height:1.6'>" +
+    "<p>Bonjour " + prenom + ",</p>" +
+    "<p>" + intro + "</p>" +
+    manquantsHtml +
+    "<p style='margin:18px 0'><a href='" + lien + "' style='background:#d9682f;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:bold'>Compléter mon dossier d'embauche</a></p>" +
+    "<p style='font-size:12px;color:#666;word-break:break-all'>Ou copiez ce lien : " + lien + "</p>" +
+    "<p>Merci de compléter le formulaire et de joindre les documents demandés.</p>" +
+    "<p>L'équipe RH<br>WT Corporation</p></div>";
+  MailApp.sendEmail({ to: rec.courriel, subject: sujet, htmlBody: html });
+}
+
+/** RH — crée une invitation : token + ligne Sheets + dossier Drive + (courriel). */
+function rhCreateInvitation(payload) {
+  var user = requireRH_();
+  payload = payload || {};
+  var prenom = String(payload.prenom || "").trim();
+  var nom = String(payload.nom || "").trim();
+  if (!prenom || !nom) return { ok: false, error: "Le prénom et le nom sont requis." };
+
+  var invitationId = nextInvitationId_();
+  var token = generateToken_(invitationId);
+  var lienForm = buildFormLink_(token);
+
+  // Création immédiate du dossier Drive (préférence RH), sans doublon.
+  var folder = getOrCreateEmployeeFolder(nom, prenom);
+
+  var statut = (payload.envoyerCourriel && payload.courriel) ? "Invitation envoyée" : "Brouillon";
+  getInvitationsSheet_().appendRow([
+    invitationId, token, new Date(), user, prenom, nom,
+    String(payload.courriel || ""), String(payload.telephone || ""),
+    String(payload.compagnie || ""), String(payload.poste || ""),
+    String(payload.dateEntree || ""), String(payload.gestionnaire || ""),
+    statut, "0 %", new Date(), lienForm, folder.getUrl(), String(payload.notes || "")
+  ]);
+  logActivite_(invitationId, "Invitation créée", prenom + " " + nom + " — " + (payload.poste || ""), user);
+
+  var courrielEnvoye = false;
+  if (payload.envoyerCourriel && payload.courriel) {
+    try {
+      sendInvitationEmail_({ prenom: prenom, courriel: payload.courriel, lienFormulaire: lienForm }, false, []);
+      logActivite_(invitationId, "Courriel envoyé", "à " + payload.courriel, user);
+      courrielEnvoye = true;
+    } catch (e) { logError_(e, null, "sendInvitationEmail_ (création)"); }
+  }
+
+  return {
+    ok: true, invitationId: invitationId, token: token, lien: lienForm,
+    lienDrive: folder.getUrl(), courrielEnvoye: courrielEnvoye,
+    sms: buildSmsMessage_(prenom, lienForm)
+  };
+}
+
+/** RH — liste toutes les invitations pour le tableau de bord. */
+function rhListInvitations() {
+  requireRH_();
+  var values = getInvitationsSheet_().getDataRange().getValues();
+  var out = [];
+  for (var r = 1; r < values.length; r++) {
+    if (values[r][0]) out.push(invitationToObject_(values[r]));
+  }
+  return { ok: true, invitations: out };
+}
+
+/** RH — renvoie un courriel de relance à l'employé. */
+function rhResendInvitation(token) {
+  var user = requireRH_();
+  var found = invitationRowByToken_(token);
+  if (!found) return { ok: false, error: "Invitation introuvable." };
+  var rec = invitationToObject_(found.values);
+  if (!rec.courriel) return { ok: false, error: "Aucun courriel n'est enregistré pour cet employé." };
+  var manquants = (arguments.length > 1 && arguments[1]) ? arguments[1] : [];
+  sendInvitationEmail_({ prenom: rec.prenom, courriel: rec.courriel, lienFormulaire: rec.lienFormulaire }, true, manquants);
+  setInvitationField_(token, "Dernière activité", new Date());
+  logActivite_(rec.id, "Relance envoyée", "à " + rec.courriel, user);
+  return { ok: true };
+}
+
+/** RH — change le statut d'un dossier. */
+function rhUpdateStatus(token, statut) {
+  var user = requireRH_();
+  if (STATUTS.indexOf(statut) === -1) return { ok: false, error: "Statut invalide." };
+  if (!setInvitationField_(token, "Statut", statut)) return { ok: false, error: "Invitation introuvable." };
+  setInvitationField_(token, "Dernière activité", new Date());
+  var found = invitationRowByToken_(token);
+  logActivite_(found ? found.values[0] : "", "Statut modifié par RH", statut, user);
+  return { ok: true };
+}
+
+/** RH — ajoute une note interne horodatée (jamais visible par l'employé). */
+function rhAddNote(token, note) {
+  var user = requireRH_();
+  var found = invitationRowByToken_(token);
+  if (!found) return { ok: false, error: "Invitation introuvable." };
+  var existing = String(found.values[17] || "");
+  var stamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || "America/Toronto", "yyyy-MM-dd HH:mm");
+  var updated = (existing ? existing + "\n" : "") + "[" + stamp + " · " + user + "] " + note;
+  setInvitationField_(token, "Notes internes", updated);
+  logActivite_(found.values[0], "Note interne ajoutée", note, user);
+  return { ok: true };
+}
+
+// ============ ACTIONS PUBLIQUES (formulaire employé, protégées par token) ============
+
+/** Retrouve l'invitation par token → préremplissage ; marque « Lien ouvert ». */
+function lookupToken_(data) {
+  var token = String(data.token || "");
+  if (!token) return { ok: false, error: "Token manquant." };
+  var found = invitationRowByToken_(token);
+  if (!found) return { ok: false, error: "Lien invalide ou invitation introuvable." };
+  var rec = invitationToObject_(found.values);
+  if (rec.statut === "Invitation envoyée" || rec.statut === "Brouillon") {
+    setInvitationField_(token, "Statut", "Lien ouvert");
+    logActivite_(rec.id, "Lien ouvert", "", "employé");
+  }
+  setInvitationField_(token, "Dernière activité", new Date());
+  // On ne renvoie QUE le préremplissage — jamais les notes internes ni les autres dossiers.
+  return {
+    ok: true,
+    prefill: {
+      prenom: rec.prenom, nom: rec.nom, courriel: rec.courriel,
+      telephone: rec.telephone, compagnie: rec.compagnie, poste: rec.poste
+    }
+  };
+}
+
+/** Met à jour la progression (statut employé + % complétion), sans rétrograder. */
+function updateProgress_(data) {
+  var token = String(data.token || "");
+  if (!token) return { ok: false, error: "Token manquant." };
+  var statut = String(data.statut || "");
+  var permis = ["Formulaire commencé", "Formulaire incomplet", "Documents partiellement reçus", "Formulaire complété"];
+  if (permis.indexOf(statut) === -1) return { ok: false, error: "Statut de progression non permis." };
+  var found = invitationRowByToken_(token);
+  if (!found) return { ok: false, error: "Invitation introuvable." };
+  var actuel = String(found.values[12] || "");
+  if (STATUTS.indexOf(statut) > STATUTS.indexOf(actuel)) setInvitationField_(token, "Statut", statut);
+  if (typeof data.completion !== "undefined") setInvitationField_(token, "% complétion", data.completion);
+  setInvitationField_(token, "Dernière activité", new Date());
+  logActivite_(found.values[0], "Progression", statut + (data.completion != null ? (" (" + data.completion + ")") : ""), "employé");
+  return { ok: true };
+}
+
+/** Appelée à la soumission finale : marque « Formulaire complété » + journalise. */
+function markInvitationSubmitted_(token, folder, submissionId, type) {
+  var found = invitationRowByToken_(token);
+  if (!found) return;
+  setInvitationField_(token, "Statut", "Formulaire complété");
+  setInvitationField_(token, "% complétion", "100 %");
+  setInvitationField_(token, "Dernière activité", new Date());
+  if (folder && folder.getUrl) setInvitationField_(token, "Lien dossier Drive", folder.getUrl());
+  logActivite_(found.values[0], "Formulaire soumis", (type || "") + " · " + (submissionId || ""), "employé");
 }
 
 // ============================== TEST MANUEL ==============================

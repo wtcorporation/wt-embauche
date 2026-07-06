@@ -427,6 +427,7 @@ class Component extends DCLogic {
     const fl = (slot) => (files[slot]||[]).map(x=>x.name).join(', ');
     return {
       type:'dossier', submittedAt:new Date().toISOString(),
+      token:(function(){try{return localStorage.getItem('wt_token')||'';}catch(e){return '';}})(),
       nom:a.nom||'', prenom:a.prenom||'',
       courriel:f.courrielPaie||a.courriel||'', telephone:a.telephone||'',
       compagnie:(a.compagnie==='Autre'?a.compagnieAutre:a.compagnie)||'', poste:a.poste||'',

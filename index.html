@@ -20,9 +20,9 @@
 <body>
   <div class="card">
     <img src="assets/logo-wt.png" alt="WT Corporation" />
-    <h1>Formulaire d'embauche</h1>
-    <p>Bienvenue chez Groupe WT Corporation. Commencez par la Partie 1 (assurance) ; les étapes suivantes se débloquent automatiquement.</p>
-    <a class="btn" href="assurance.html">Commencer l'embauche →</a>
+    <h1 id="hi">Formulaire d'embauche</h1>
+    <p id="intro">Bienvenue chez Groupe WT Corporation. Commencez par la Partie 1 (assurance) ; les étapes suivantes se débloquent automatiquement.</p>
+    <a class="btn" id="startBtn" href="assurance.html">Commencer l'embauche →</a>
     <a class="sec" href="dossier-employe.html">Reprendre à la Partie 2 (dossier employé)</a>
     <a class="sec" href="documents-a-signer.html">Reprendre aux documents à signer</a>
     <div style="margin-top:20px;padding-top:16px;border-top:1px dashed #e4e1da;text-align:center">
@@ -32,5 +32,59 @@
     </div>
   </div>
   <p class="foot">🔒 Données confidentielles réservées au département RH de Groupe WT Corporation.</p>
+
+  <script src="config.js"></script>
+  <script>
+  // Lien personnalisé RH : lit ?token=, prérremplit le formulaire et met à jour le statut.
+  (function(){
+    function qp(n){ try{ return new URLSearchParams(location.search).get(n)||''; }catch(e){ return ''; } }
+    function ls(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+    function lss(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+
+    var token = qp('token');
+    if(token){ lss('wt_token', token); } else { token = ls('wt_token') || ''; }
+    if(!token) return; // accès public sans invitation : comportement d'origine inchangé
+
+    var url = (window.WT_CONFIG && window.WT_CONFIG.SCRIPT_URL) || '';
+    if(!url) return;
+
+    // Récupère l'invitation → accueil personnalisé + préremplissage (marque « Lien ouvert » côté serveur).
+    fetch(url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action:'lookupToken', token: token })})
+      .then(function(r){ return r.json(); })
+      .then(function(res){
+        if(!res || !res.ok || !res.prefill) return;
+        var p = res.prefill;
+        if(p.prenom){
+          var hi=document.getElementById('hi'); if(hi) hi.textContent='Bienvenue '+p.prenom+' 👋';
+          var intro=document.getElementById('intro');
+          if(intro) intro.textContent='Nous sommes heureux de vous accueillir dans l’équipe. Afin de compléter votre dossier d’embauche, veuillez remplir les sections suivantes et joindre les documents demandés.';
+        }
+        // Prérremplir la Partie 1 seulement si le dossier n'est pas déjà commencé sur cet appareil.
+        try {
+          var cur = JSON.parse(ls('wt_assurance_v1')||'null');
+          var started = cur && cur.f && (cur.f.prenom || cur.f.nom);
+          if(!started){
+            lss('wt_assurance_v1', JSON.stringify({ step:0, f:{
+              prenom:p.prenom||'', nom:p.nom||'', courriel:p.courriel||'',
+              telephone:p.telephone||'', compagnie:p.compagnie||'', poste:p.poste||''
+            }}));
+          }
+        } catch(e){}
+      })
+      .catch(function(){});
+
+    // Marque « Formulaire commencé » quand l'employé clique sur Commencer (keepalive : survit à la navigation).
+    var start=document.getElementById('startBtn');
+    if(start){
+      start.addEventListener('click', function(){
+        try{
+          fetch(url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, keepalive:true,
+            body: JSON.stringify({ action:'updateProgress', token: token, statut:'Formulaire commencé' })});
+        }catch(e){}
+      });
+    }
+  })();
+  </script>
 </body>
 </html>
