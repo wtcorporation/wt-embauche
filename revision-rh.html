@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700;800&family=Nunito+Sans:opsz,wght@6..12,400;6..12,500;6..12,600;6..12,700&display=swap" rel="stylesheet" />
+  <style>
+    *{box-sizing:border-box}
+    html,body{margin:0}
+    body{background:#f2efe8;font-family:'Nunito Sans',system-ui,sans-serif;color:#22252b;-webkit-font-smoothing:antialiased}
+    input,select,textarea{width:100%;padding:12px 14px;font-family:'Nunito Sans',system-ui,sans-serif;font-size:15.5px;color:#22252b;background:#fff;border:1.6px solid #e4e1da;border-radius:11px;outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none;appearance:none}
+    textarea{min-height:80px;resize:vertical;line-height:1.5}
+    input:focus,select:focus,textarea:focus{border-color:var(--accent,#d9682f);box-shadow:0 0 0 4px var(--accent-soft,#fdeadd)}
+    input::placeholder,textarea::placeholder{color:#a9a69d}
+    input[type=date]{min-height:47px}
+    select{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' stroke='%236b6f77' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;background-size:12px;padding-right:38px;cursor:pointer}
+    label{display:block;font-family:'Figtree',sans-serif;font-weight:600;font-size:13.5px;color:#3a3e45;margin-bottom:6px}
+  </style>
+</helmet>
+<div style="--accent:{{ accentMain }};--accent-soft:{{ accentSoft }};min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:0 16px 48px">
+
+  <header style="width:100%;max-width:680px;display:flex;align-items:center;gap:14px;padding:20px 4px 18px">
+    <img src="assets/logo-wt.png" alt="WT Corporation" style="height:34px;width:auto;object-fit:contain" />
+    <div style="width:1px;height:26px;background:#d6d2c9"></div>
+    <span style="font-family:'Figtree',sans-serif;font-weight:700;font-size:14px;color:#5c626b;letter-spacing:.2px">Groupe WT Corporation · Révision RH</span>
+  </header>
+
+  <main style="width:100%;max-width:680px;background:#fff;border:1px solid #eae7df;border-radius:22px;box-shadow:0 22px 60px -34px rgba(40,36,30,.5);overflow:hidden">
+    <div style="padding:26px 24px 30px">
+
+      <div style="display:flex;align-items:center;gap:9px;background:#f0f1f4;border:1px solid #d7dae1;border-radius:12px;padding:11px 14px;margin-bottom:20px">
+        <span style="font-size:15px;line-height:1">🔧</span>
+        <span style="font-family:'Figtree',sans-serif;font-weight:600;font-size:13px;color:#4a4f57">Section réservée au département RH — révision du dossier d'embauche.</span>
+      </div>
+
+      <!-- EMPTY STATE -->
+      <sc-if value="{{ noData }}" hint-placeholder-val="">
+        <div style="text-align:center;padding:24px 8px">
+          <div style="width:64px;height:64px;border-radius:16px;background:#f4f1ea;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 16px">📂</div>
+          <h1 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:22px;color:#22252b;margin:0 0 12px">Aucun dossier à afficher</h1>
+          <p style="font-size:15px;line-height:1.6;color:#5c626b;margin:0 auto;max-width:460px">Ouvrez cette page à partir du <strong>lien de révision</strong> envoyé par l'employé à la fin de son formulaire, ou sur l'appareil où le formulaire a été rempli.</p>
+        </div>
+      </sc-if>
+
+      <!-- DOSSIER -->
+      <sc-if value="{{ hasData }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <h1 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:25px;line-height:1.2;color:#22252b;margin:0 0 4px;text-wrap:balance">{{ titre }}</h1>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 18px">
+            <span style="font-family:'Figtree',sans-serif;font-weight:700;font-size:12px;padding:5px 10px;border-radius:99px;background:{{ pathBg }};color:{{ pathColor }}">{{ pathLabel }}</span>
+            <span style="font-family:'Figtree',sans-serif;font-weight:600;font-size:12px;padding:5px 10px;border-radius:99px;background:#f0ede6;color:#7c7a72">{{ sourceLabel }}</span>
+          </div>
+
+          <!-- résumé employé -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;background:#fbfaf7;border:1px solid #eae7df;border-radius:14px;padding:16px;margin-bottom:20px">
+            <div><div style="font-family:'Figtree',sans-serif;font-weight:700;font-size:11px;color:#9a968d;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Poste</div><div style="font-size:14.5px;color:#3a3e45">{{ resPoste }}</div></div>
+            <div><div style="font-family:'Figtree',sans-serif;font-weight:700;font-size:11px;color:#9a968d;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Compagnie</div><div style="font-size:14.5px;color:#3a3e45">{{ resCompagnie }}</div></div>
+            <div><div style="font-family:'Figtree',sans-serif;font-weight:700;font-size:11px;color:#9a968d;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Entrée en fonction</div><div style="font-size:14.5px;color:#3a3e45">{{ resDateEntree }}</div></div>
+          </div>
+
+          <!-- barre de complétude -->
+          <div style="background:{{ pctBg }};border:1px solid {{ pctBorder }};border-radius:14px;padding:15px 17px;margin-bottom:24px">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:9px">
+              <span style="font-family:'Figtree',sans-serif;font-weight:800;font-size:15px;color:{{ pctColor }}">{{ pctTitle }}</span>
+              <span style="font-family:'Figtree',sans-serif;font-weight:700;font-size:13px;color:{{ pctColor }}">{{ pctCount }}</span>
+            </div>
+            <div style="height:9px;background:#ffffff;border-radius:99px;overflow:hidden;border:1px solid rgba(0,0,0,.04)">
+              <div style="height:100%;width:{{ pct }}%;background:{{ pctColor }};border-radius:99px;transition:width .5s cubic-bezier(.4,0,.2,1)"></div>
+            </div>
+          </div>
+
+          <!-- liste de contrôle -->
+          <h2 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:17px;color:#22252b;margin:0 0 12px">Liste de contrôle</h2>
+          <sc-for list="{{ groupsView }}" as="g" hint-placeholder-count="5">
+            <div style="border:1px solid #eae7df;border-radius:14px;overflow:hidden;margin-bottom:12px">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 15px;background:#fbfaf7;border-bottom:1px solid #f0ede6">
+                <span style="font-family:'Figtree',sans-serif;font-weight:700;font-size:14px;color:#3a3e45">{{ g.title }}</span>
+                <span style="font-family:'Figtree',sans-serif;font-weight:700;font-size:12px;padding:3px 9px;border-radius:99px;background:{{ g.countBg }};color:{{ g.countColor }}">{{ g.countLabel }}</span>
+              </div>
+              <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="3">
+                <div style="display:flex;align-items:flex-start;gap:11px;padding:11px 15px;border-bottom:1px solid #f5f2ec">
+                  <span style="width:22px;height:22px;min-width:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;background:{{ it.badgeBg }};color:{{ it.badgeColor }};margin-top:1px">{{ it.mark }}</span>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:14px;color:#3a3e45;line-height:1.35">{{ it.label }}</div>
+                    <sc-if value="{{ it.detail }}" hint-placeholder-val=""><div style="font-size:12.5px;color:#9a968d;line-height:1.4;margin-top:1px;word-break:break-word">{{ it.detail }}</div></sc-if>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-for>
+
+          <!-- fiche RH interne -->
+          <h2 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:17px;color:#22252b;margin:26px 0 4px">Fiche RH interne</h2>
+          <p style="font-size:13.5px;color:#6b6f77;margin:0 0 16px;line-height:1.5">À compléter par les RH lors de l'ouverture du dossier. Enregistrée sur cet appareil.</p>
+
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:150px;margin-bottom:16px"><label>N° d'employé</label><input type="text" name="rhNumeroEmploye" value="{{ fiche.rhNumeroEmploye }}" onChange="{{ onFicheField }}" placeholder="Ex. WT-2026-014" /></div>
+            <div style="flex:1;min-width:150px;margin-bottom:16px"><label>Statut du dossier</label><select name="rhStatut" value="{{ fiche.rhStatut }}" onChange="{{ onFicheField }}"><option value="Reçu">Reçu</option><option value="À valider">À valider</option><option value="Documents manquants">Documents manquants</option><option value="Complet">Complet</option></select></div>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:150px;margin-bottom:16px"><label>Salaire / taux</label><input type="text" name="rhSalaire" value="{{ fiche.rhSalaire }}" onChange="{{ onFicheField }}" placeholder="Ex. 25,00 $ ou 55 000 $" /></div>
+            <div style="flex:1;min-width:150px;margin-bottom:16px"><label>Base</label><select name="rhBase" value="{{ fiche.rhBase }}" onChange="{{ onFicheField }}"><option value="">Choisir…</option><option value="Horaire">Horaire</option><option value="Annuel">Annuel</option><option value="À la course / commission">À la course / commission</option></select></div>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:150px;margin-bottom:16px"><label>Fréquence de paie</label><select name="rhFrequence" value="{{ fiche.rhFrequence }}" onChange="{{ onFicheField }}"><option value="">Choisir…</option><option value="Hebdomadaire">Hebdomadaire</option><option value="Aux 2 semaines">Aux 2 semaines</option><option value="Bimensuelle">Bimensuelle</option><option value="Mensuelle">Mensuelle</option></select></div>
+            <div style="flex:1;min-width:150px;margin-bottom:16px"><label>Mode de paiement</label><select name="rhModePaiement" value="{{ fiche.rhModePaiement }}" onChange="{{ onFicheField }}"><option value="">Choisir…</option><option value="Dépôt direct">Dépôt direct</option><option value="Chèque">Chèque</option></select></div>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:150px;margin-bottom:16px"><label>Vacances (%)</label><input type="text" name="rhVacances" value="{{ fiche.rhVacances }}" onChange="{{ onFicheField }}" placeholder="Ex. 4 % / 6 %" /></div>
+            <div style="flex:1;min-width:150px;margin-bottom:16px"><label>Centre de coût / n° de projet</label><input type="text" name="rhCentreCout" value="{{ fiche.rhCentreCout }}" onChange="{{ onFicheField }}" /></div>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:150px;margin-bottom:16px"><label>Date d'approbation</label><input type="date" name="rhDateApprobation" value="{{ fiche.rhDateApprobation }}" onChange="{{ onFicheField }}" /></div>
+            <div style="flex:1;min-width:150px;margin-bottom:16px"><label>Approuvé par</label><input type="text" name="rhApprouvePar" value="{{ fiche.rhApprouvePar }}" onChange="{{ onFicheField }}" placeholder="Nom du responsable RH" /></div>
+          </div>
+          <div style="margin-bottom:18px"><label>Notes internes RH</label><textarea name="rhNotes" value="{{ fiche.rhNotes }}" onChange="{{ onFicheField }}" placeholder="Relances, particularités du dossier, suivi…"></textarea></div>
+
+          <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:8px">
+            <button type="button" onClick="{{ saveFicheBtn }}" style="flex:1;min-width:160px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 20px;font-family:'Figtree',sans-serif;font-weight:700;font-size:15px;color:#fff;background:var(--accent,#d9682f);border:none;border-radius:12px;cursor:pointer"><sc-if value="{{ ficheSaved }}" hint-placeholder-val="">✓ Fiche enregistrée</sc-if><sc-if value="{{ ficheNotSaved }}" hint-placeholder-val="{{ true }}">Enregistrer la fiche RH</sc-if></button>
+            <button type="button" onClick="{{ downloadDossier }}" style="flex:1;min-width:160px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 20px;font-family:'Figtree',sans-serif;font-weight:700;font-size:15px;color:#4a4f57;background:#fff;border:1.6px solid #e0ddd6;border-radius:12px;cursor:pointer">📄 Télécharger le dossier complet</button>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </main>
+
+  <p style="max-width:680px;width:100%;text-align:center;font-size:12px;color:#9a968d;margin:18px auto 0;line-height:1.5">🔒 Données confidentielles · réservées au département RH de Groupe WT Corporation.</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;720px&quot;,&quot;height&quot;:&quot;900px&quot;},&quot;accentTheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Chaleureux (orange terracotta)&quot;,&quot;options&quot;:[&quot;Chaleureux (orange terracotta)&quot;,&quot;Corporatif (bleu profond)&quot;,&quot;Sobre (vert forêt)&quot;,&quot;Industriel (graphite)&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Apparence&quot;}}">
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this.model = this.loadModel();
+    this.computed = this.compute();
+    this.ficheKey = 'wt_revision_rh__' + this.slug();
+    this.state = { fiche: this.loadFiche(), saved:false };
+  }
+
+  loadModel(){
+    const rd = (k)=>{ try { return JSON.parse(localStorage.getItem(k)||'{}'); } catch(e){ return {}; } };
+    let h = null;
+    try {
+      const m = (location.hash||'').match(/[#&]d=([^&]+)/);
+      if (m){ let b64 = m[1]; try { if (/%/.test(b64)) b64 = decodeURIComponent(b64); } catch(e){} const json = decodeURIComponent(escape(atob(b64))); h = JSON.parse(json); }
+    } catch(e){ h = null; }
+    if (h && (h.a || h.d || h.doc)) return { src:'lien', a:h.a||{}, d:h.d||{}, doc:h.doc||{} };
+    return { src:'local', a:rd('wt_assurance_v1'), d:rd('wt_dossier_v1'), doc:rd('wt_documents_v1') };
+  }
+
+  has(v){ return v!=null && String(v).trim()!==''; }
+  af(){ return (this.model.a && this.model.a.f) || {}; }
+  df(){ return (this.model.d && this.model.d.f) || {}; }
+  docf(){ return (this.model.doc && this.model.doc.f) || {}; }
+  afiles(){ return (this.model.a && this.model.a.files) || {}; }
+  dfiles(){ return (this.model.d && this.model.d.files) || {}; }
+  hasFile(files, slot){ const arr = files[slot]; return !!(arr && arr.length); }
+  fileNames(files, slot){ const arr = files[slot]||[]; return arr.map(x=>x.name).filter(Boolean).join(', '); }
+
+  sansAssurance(){ return !!(this.model.a && this.model.a.assuranceRequise === false); }
+  nomComplet(){ const a=this.af(); return ((a.prenom||'')+' '+(a.nom||'')).trim(); }
+  slug(){ const n=this.nomComplet().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); return n||'dossier'; }
+  fmtDate(iso){ if(!this.has(iso)) return ''; try { return new Date(iso+'T00:00:00').toLocaleDateString('fr-CA',{year:'numeric',month:'long',day:'numeric'}); } catch(e){ return iso; } }
+
+  compute(){
+    const a = this.af(), d = this.df(), doc = this.docf();
+    const aS = this.model.a || {}, dS = this.model.d || {};
+    const af = this.afiles(), dfl = this.dfiles();
+    const sans = this.sansAssurance();
+    const has = (v)=>this.has(v);
+    const mk = (label, ok, detail, opt)=>({ label, ok:!!ok, detail:detail||'', opt:!!opt });
+    const groups = [];
+
+    groups.push({ title:'Identité', items:[
+      mk('Nom complet', has(a.prenom)&&has(a.nom), this.nomComplet()),
+      mk('Date de naissance', has(a.dateNaissance), this.fmtDate(a.dateNaissance)),
+      mk('Adresse', has(a.adresse)&&has(a.ville)&&has(a.codePostal), [a.adresse,a.ville,a.province,a.codePostal].filter(x=>this.has(x)).join(', ')),
+      mk('Téléphone', has(a.telephone), a.telephone||''),
+      mk('Courriel', has(a.courriel), a.courriel||''),
+    ]});
+
+    const compagnie = a.compagnie==='Autre'?a.compagnieAutre:a.compagnie;
+    const departement = a.departement==='Autre'?a.departementAutre:a.departement;
+    groups.push({ title:'Emploi', items:[
+      mk('Compagnie', has(compagnie), compagnie||''),
+      mk('Poste', has(a.poste), a.poste||''),
+      mk('Date d\u2019entrée', has(a.dateEntree), this.fmtDate(a.dateEntree)),
+      mk('Type d\u2019emploi', has(a.typeEmploi), a.typeEmploi||''),
+      mk('Département', has(departement), departement||''),
+    ]});
+
+    const classe = a.permisClasse==='Autre'?a.permisClasseAutre:a.permisClasse;
+    groups.push({ title:'Permis de conduire', items:[
+      mk('N° de permis', has(a.permisNumero), a.permisNumero||''),
+      mk('Classe', has(classe), classe||''),
+      mk('Date d\u2019expiration', has(a.permisExpiration), this.fmtDate(a.permisExpiration)),
+    ]});
+
+    if (!sans){
+      groups.push({ title:'Assurance', items:[
+        mk('Autorisation signée', !!aS.signature && !!a.consentAssurance, aS.signature?'Signée':'Manquante'),
+        mk('Approbation de l\u2019assureur', !!aS.assureurApprouve, aS.assureurApprouve?'Approuvé':'En attente'),
+      ]});
+    }
+
+    groups.push({ title:'Paie', items:[
+      mk('Courriel de paie', has(d.courrielPaie), d.courrielPaie||''),
+      mk('Institution bancaire', has(d.banque), d.banque||''),
+      mk('N° de transit', has(d.transit), d.transit||''),
+      mk('N° d\u2019institution', has(d.institution), d.institution||''),
+      mk('N° de compte', has(d.compte), has(d.compte)?'Fourni':''),
+      mk('NAS', has(d.nas), has(d.nas)?'Fourni':'À recueillir', true),
+    ]});
+
+    groups.push({ title:'Contact d\u2019urgence', items:[
+      mk('Nom du contact', has(d.urgenceNom), d.urgenceNom||''),
+      mk('Lien', has(d.urgenceLien), d.urgenceLien||''),
+      mk('Téléphone', has(d.urgenceTel), d.urgenceTel||''),
+    ]});
+
+    const consentsOk = d.consent1 && d.consent2 && d.consent3 && d.consent4;
+    groups.push({ title:'Consentements et signature', items:[
+      mk('Consentements confirmés', !!consentsOk, consentsOk?'Les 4 confirmés':'Incomplets'),
+      mk('Signature du dossier', !!dS.signature, dS.signature?'Signé':'Manquante'),
+    ]});
+
+    const docItems = [
+      mk('Permis de conduire — recto', this.hasFile(af,'permisRecto'), this.fileNames(af,'permisRecto')),
+      mk('Permis de conduire — verso', this.hasFile(af,'permisVerso'), this.fileNames(af,'permisVerso')),
+    ];
+    if (!sans){
+      docItems.push(mk('Dossier de conduite — classe 5', this.hasFile(af,'dossierC5'), this.fileNames(af,'dossierC5')));
+      docItems.push(mk('Dossier de conduite — classe 1', this.hasFile(af,'dossierC1'), this.fileNames(af,'dossierC1')));
+      docItems.push(mk('Certificat WreckMaster', this.hasFile(af,'wreckCert'), this.fileNames(af,'wreckCert'), true));
+    }
+    docItems.push(mk('Spécimen de chèque', this.hasFile(dfl,'specimen'), this.fileNames(dfl,'specimen')));
+    docItems.push(mk('Curriculum vitæ', this.hasFile(dfl,'cv'), this.fileNames(dfl,'cv'), true));
+    groups.push({ title:'Documents reçus (téléversés)', items:docItems });
+
+    const sig = (this.model.doc && this.model.doc.signatures) || {};
+    const dsig = (k)=>!!sig[k];
+    const signSpec = [
+      {t:'Attestation — harcèlement', k:'harcelement_emp'},
+      {t:'Politique 1 — véhicules lourds', k:'p1_emp'},
+      {t:'Politique 2 — vérification avant départ', k:'p2_emp'},
+      {t:'Politique 3 — heures de conduite', k:'p3_emp'},
+      {t:'Politique 4 — normes d\u2019arrimage', k:'p4_emp'},
+      {t:'Politique 5 — marchandises dangereuses', k:'p5_emp'},
+      {t:'Politique 6 — charges et dimensions', k:'p6_emp'},
+      {t:'Politique 7 — alcool et stupéfiants', k:'p7_emp'},
+      {t:'Politique 8 — entretien préventif', k:'p8_emp'},
+      {t:'Politique 9 — interceptions et infractions', k:'p9_emp'},
+      {t:'Politique 10 — vitesse permise', k:'p10_emp'},
+      {t:'Consentement — plumitif / SAAQ', k:'plumitif_cand'},
+      {t:'Contact d\u2019urgence (document signé)', urg:true},
+      {t:'Déclaration de validité de permis', k:'permis_cond'},
+    ];
+    const signItems = signSpec.map(s=> mk(s.t, s.urg ? (has(doc.u1Nom)&&has(doc.u1Tel)) : dsig(s.k), s.urg ? '' : (dsig(s.k)?'Signé':'Non signé')));
+    groups.push({ title:'Documents à signer', items:signItems });
+
+    let ok=0, req=0;
+    groups.forEach(g=>g.items.forEach(it=>{ if(!it.opt){ req++; if(it.ok) ok++; } }));
+    const pct = req ? Math.round(ok/req*100) : 0;
+    const nom = this.nomComplet();
+    const anyData = !!nom || ok>0;
+    return { groups, ok, req, pct, sans, anyData };
+  }
+
+  loadFiche(){
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem(this.ficheKey)||'{}'); } catch(e){}
+    const d = this.df();
+    const seed = {
+      rhNumeroEmploye:d.rhNumeroEmploye||'', rhStatut:d.rhStatut||'Reçu', rhSalaire:d.rhSalaire||'',
+      rhBase:d.rhBase||'', rhFrequence:d.rhFrequence||'', rhModePaiement:d.rhModePaiement||'',
+      rhVacances:d.rhVacances||'', rhCentreCout:d.rhCentreCout||'', rhDateApprobation:d.rhDateApprobation||'',
+      rhApprouvePar:d.rhApprouvePar||'', rhNotes:d.rhNotes||'',
+    };
+    return Object.assign(seed, saved);
+  }
+  saveFiche(){ try { localStorage.setItem(this.ficheKey, JSON.stringify(this.state.fiche)); } catch(e){} }
+  componentDidUpdate(){ this.saveFiche(); }
+
+  onFicheField = (e) => {
+    const {name, value} = e.target;
+    this.setState(s => ({ fiche: {...s.fiche, [name]: value}, saved:false }));
+  };
+  saveFicheBtn = () => {
+    this.saveFiche();
+    this.setState({ saved:true });
+    setTimeout(()=>{ try { this.setState({ saved:false }); } catch(e){} }, 2000);
+  };
+
+  palette(){
+    const map = {
+      'Chaleureux (orange terracotta)': {main:'#d9682f', soft:'#fdeadd'},
+      'Corporatif (bleu profond)':      {main:'#2a5db0', soft:'#e4edfb'},
+      'Sobre (vert forêt)':             {main:'#2f7d55', soft:'#e2f1e8'},
+      'Industriel (graphite)':          {main:'#3a3f47', soft:'#e9eaec'},
+    };
+    return map[this.props.accentTheme] || map['Chaleureux (orange terracotta)'];
+  }
+
+  downloadDossier = () => {
+    const a = this.af(), d = this.df(), doc = this.docf();
+    const fiche = this.state.fiche;
+    const esc = (s)=>String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+    const row = (l,v)=>'<tr><td style="padding:6px 12px;color:#6b6f77;font-weight:600;width:44%;vertical-align:top">'+esc(l)+'</td><td style="padding:6px 12px;color:#22252b">'+(esc(v)||'<span style=\"color:#b9b6ae\">—</span>')+'</td></tr>';
+    const sec = (t)=>'<h2 style="font:700 15px Arial;color:#d9682f;margin:24px 0 6px;border-bottom:2px solid #f0ede6;padding-bottom:5px">'+t+'</h2><table style="width:100%;border-collapse:collapse;font:13.5px Arial">';
+    let checklist = '';
+    this.computed.groups.forEach(g=>{
+      checklist += '<h3 style="font:700 13.5px Arial;color:#3a3e45;margin:16px 0 4px">'+esc(g.title)+'</h3><table style="width:100%;border-collapse:collapse;font:13px Arial">';
+      g.items.forEach(it=>{
+        const mark = it.ok ? '✓' : (it.opt ? '–' : '✗');
+        const col = it.ok ? '#2f7d55' : (it.opt ? '#9a968d' : '#c0392b');
+        checklist += '<tr><td style="padding:4px 10px;width:26px;color:'+col+';font-weight:700;vertical-align:top">'+mark+'</td><td style="padding:4px 10px;color:#22252b">'+esc(it.label)+(it.detail?(' <span style="color:#9a968d">— '+esc(it.detail)+'</span>'):'')+'</td></tr>';
+      });
+      checklist += '</table>';
+    });
+    const compagnie = a.compagnie==='Autre'?a.compagnieAutre:a.compagnie;
+    const departement = a.departement==='Autre'?a.departementAutre:a.departement;
+    const classe = a.permisClasse==='Autre'?a.permisClasseAutre:a.permisClasse;
+    const html = '<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Dossier d\u2019embauche — '+esc(this.nomComplet())+'</title></head><body style="font:14px Arial;color:#22252b;max-width:740px;margin:30px auto;padding:0 22px;background:#fff">'
+      + '<div style="border-bottom:3px solid #d9682f;padding-bottom:14px;margin-bottom:8px"><h1 style="font:800 22px Arial;margin:0">Dossier d\u2019embauche — Révision RH</h1><p style="color:#6b6f77;margin:4px 0 0">Groupe WT Corporation · '+(esc(this.nomComplet())||'employé')+' · '+(this.computed.sans?'Sans assurance':'Avec assurance')+'</p></div>'
+      + '<p style="background:#fdf4ec;border:1px solid #f4dcc7;border-radius:8px;padding:10px 14px;color:#8a5a34;font:13px Arial">Astuce : appuyez sur <b>Ctrl/Cmd + P</b> pour enregistrer ce dossier en PDF. Complétude : '+this.computed.ok+'/'+this.computed.req+'.</p>'
+      + sec('Identité')+row('Prénom',a.prenom)+row('Nom',a.nom)+row('Date de naissance',this.fmtDate(a.dateNaissance))+row('Adresse',[a.adresse,a.ville,a.province,a.codePostal].filter(x=>this.has(x)).join(', '))+row('Téléphone',a.telephone)+row('Courriel',a.courriel)+'</table>'
+      + sec('Emploi')+row('Compagnie',compagnie)+row('Poste',a.poste)+row('Entrée en fonction',this.fmtDate(a.dateEntree))+row('Type d\u2019emploi',a.typeEmploi)+row('Département',departement)+'</table>'
+      + sec('Permis')+row('N° de permis',a.permisNumero)+row('Classe',classe)+row('Expiration',this.fmtDate(a.permisExpiration))+row('Mentions',a.mentions)+'</table>'
+      + sec('Paie')+row('NAS',this.has(d.nas)?'Fourni':'À recueillir')+row('Courriel de paie',d.courrielPaie)+row('Institution',d.banque)+row('Transit',d.transit)+row('Institution (n°)',d.institution)+row('Compte',this.has(d.compte)?'Fourni':'—')+'</table>'
+      + sec('Contact d\u2019urgence')+row('Nom',d.urgenceNom)+row('Lien',d.urgenceLien)+row('Téléphone',d.urgenceTel)+row('2e téléphone',d.urgenceTel2)+'</table>'
+      + '<h2 style="font:700 15px Arial;color:#d9682f;margin:24px 0 6px;border-bottom:2px solid #f0ede6;padding-bottom:5px">Liste de contrôle</h2>'+checklist
+      + sec('Fiche RH interne')+row('N° d\u2019employé',fiche.rhNumeroEmploye)+row('Statut',fiche.rhStatut)+row('Salaire / taux',fiche.rhSalaire)+row('Base',fiche.rhBase)+row('Fréquence',fiche.rhFrequence)+row('Mode de paiement',fiche.rhModePaiement)+row('Vacances',fiche.rhVacances)+row('Centre de coût',fiche.rhCentreCout)+row('Date d\u2019approbation',this.fmtDate(fiche.rhDateApprobation))+row('Approuvé par',fiche.rhApprouvePar)+row('Notes',fiche.rhNotes)+'</table>'
+      + '</body></html>';
+    try {
+      const w = window.open('', '_blank');
+      if (w){ w.document.open(); w.document.write(html); w.document.close(); }
+      else { const blob = new Blob([html],{type:'text/html'}); const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href=url; link.download='dossier-embauche-'+(a.nom||'revision')+'.html'; link.click(); }
+    } catch(e){}
+  };
+
+  renderVals(){
+    const c = this.computed;
+    const pal = this.palette();
+    const a = this.af();
+    const compagnie = a.compagnie==='Autre'?a.compagnieAutre:a.compagnie;
+    const dash = (v)=> this.has(v) ? v : '—';
+
+    const groupsView = c.groups.map(g=>{
+      let gok=0, greq=0;
+      const items = g.items.map(it=>{
+        if (!it.opt){ greq++; if (it.ok) gok++; }
+        const mark = it.ok ? '✓' : (it.opt ? '–' : '!');
+        const badgeBg = it.ok ? '#eaf6ef' : (it.opt ? '#f0ede6' : '#fdecea');
+        const badgeColor = it.ok ? '#2f7d55' : (it.opt ? '#9a968d' : '#c0392b');
+        return { label:it.label, detail:it.detail, mark, badgeBg, badgeColor };
+      });
+      const complete = greq===0 || gok===greq;
+      return { title:g.title, items, countLabel:(greq===0?'—':gok+'/'+greq), complete, countBg: complete?'#eaf6ef':'#fdf0e6', countColor: complete?'#2f7d55':'#b26a29' };
+    });
+
+    const complete = c.req>0 && c.ok===c.req;
+    const nearly = c.pct>=70 && !complete;
+    const pctColor = complete ? '#2f7d55' : (nearly ? '#b26a29' : '#c0392b');
+    const pctBg = complete ? '#eef8f1' : (nearly ? '#fdf4ec' : '#fdecea');
+    const pctBorder = complete ? '#cfe9d8' : (nearly ? '#f4dcc7' : '#f5cfca');
+
+    return {
+      accentMain: pal.main, accentSoft: pal.soft,
+      hasData: c.anyData, noData: !c.anyData,
+      titre: this.nomComplet() || 'Dossier d\u2019embauche',
+      sansAssurance: c.sans,
+      pathLabel: c.sans ? 'Sans assurance' : 'Avec assurance',
+      pathBg: c.sans ? '#e2f1e8' : '#eaf1fb',
+      pathColor: c.sans ? '#2f7d55' : '#2a5db0',
+      sourceLabel: this.model.src==='lien' ? 'Données reçues par lien' : 'Données de cet appareil',
+      resPoste: dash(a.poste),
+      resCompagnie: dash(compagnie),
+      resDateEntree: dash(this.fmtDate(a.dateEntree)),
+      pct: c.pct,
+      pctCount: c.ok + ' / ' + c.req + ' éléments requis',
+      pctTitle: complete ? 'Dossier complet ✓' : (nearly ? 'Presque complet' : 'Éléments manquants'),
+      pctColor, pctBg, pctBorder,
+      groupsView,
+      fiche: this.state.fiche,
+      onFicheField: this.onFicheField,
+      saveFicheBtn: this.saveFicheBtn,
+      ficheSaved: this.state.saved,
+      ficheNotSaved: !this.state.saved,
+      downloadDossier: this.downloadDossier,
+    };
+  }
+}
+</script>
+</body>
+</html>

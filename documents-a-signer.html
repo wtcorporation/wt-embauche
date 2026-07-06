@@ -268,6 +268,15 @@
               </div>
             </sc-for>
           </div>
+          <div style="background:#f0f4fb;border:1px solid #d7e0f0;border-radius:14px;padding:16px 17px;margin-bottom:20px">
+            <div style="font-family:'Figtree',sans-serif;font-weight:800;font-size:14.5px;color:#2a5db0;margin-bottom:5px">📤 Transmettre le dossier à la RH</div>
+            <p style="font-size:13.5px;line-height:1.55;color:#5c626b;margin:0 0 13px">Générez un lien de révision (liste de contrôle + fiche RH interne) que le département RH pourra ouvrir sur son appareil.</p>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <button type="button" onClick="{{ sendToRH }}" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 18px;font-family:'Figtree',sans-serif;font-weight:700;font-size:14.5px;color:#fff;background:#2a5db0;border:none;border-radius:12px;cursor:pointer">✉️ Envoyer le lien par courriel</button>
+              <button type="button" onClick="{{ copyLink }}" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 18px;font-family:'Figtree',sans-serif;font-weight:700;font-size:14.5px;color:#2a5db0;background:#fff;border:1.6px solid #c3d3ec;border-radius:12px;cursor:pointer"><sc-if value="{{ linkCopied }}" hint-placeholder-val="">✓ Lien copié</sc-if><sc-if value="{{ linkNotCopied }}" hint-placeholder-val="{{ true }}">🔗 Copier le lien de révision</sc-if></button>
+              <button type="button" onClick="{{ openReview }}" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px 18px;font-family:'Figtree',sans-serif;font-weight:600;font-size:13.5px;color:#5c626b;background:transparent;border:none;cursor:pointer;text-decoration:underline">Ouvrir la révision RH →</button>
+            </div>
+          </div>
           <div style="display:flex;flex-direction:column;gap:12px;max-width:380px;margin:0 auto">
             <button type="button" onClick="{{ downloadCopy }}" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:15px 20px;font-family:'Figtree',sans-serif;font-weight:700;font-size:15.5px;color:#fff;background:var(--accent,#d9682f);border:none;border-radius:13px;cursor:pointer">📄 Télécharger le dossier PDF</button>
             <button type="button" onClick="{{ goHome }}" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:15px 20px;font-family:'Figtree',sans-serif;font-weight:700;font-size:15.5px;color:#4a4f57;background:#fff;border:1.6px solid #e0ddd6;border-radius:13px;cursor:pointer">Retour à l'accueil</button>
@@ -310,6 +319,7 @@ class Component extends DCLogic {
       sendState: null,
       sendError: null,
       submissionId: '',
+      linkCopied: false,
     };
     if ((typeof saved.step === 'number') && saved.step === this.docs.length + 1) this.state.sendState = 'sent';
     this.hadProgress = !!(saved.signatures && Object.keys(saved.signatures).length) || (typeof saved.step === 'number' && saved.step > 0);
@@ -473,6 +483,8 @@ class Component extends DCLogic {
       .then((r) => r.json())
       .then((res) => {
         if (res && res.ok){
+          // Instantané du dossier pour le lien de révision RH, capturé AVANT l'effacement.
+          this.__reviewSnapshot = this.buildReviewData();
           // Soumission finale réussie : effacer toutes les données locales (exigence de confidentialité).
           this.__finalCleared = true;
           try { localStorage.removeItem('wt_assurance_v1'); localStorage.removeItem('wt_dossier_v1'); localStorage.removeItem('wt_documents_v1'); } catch(e){}
@@ -548,6 +560,42 @@ class Component extends DCLogic {
     } catch(err){}
   };
 
+  // ----- Transmission du dossier à la RH (lien de révision encodé) -----
+  // Note : la soumission backend efface le localStorage (confidentialité). On capture
+  // donc un instantané des données AVANT l'effacement (voir submitToServer) pour que
+  // le lien de révision reste valide même après l'envoi.
+  buildReviewData(){
+    if (this.__reviewSnapshot) return this.__reviewSnapshot;
+    const rd = (k)=>{ try { return JSON.parse(localStorage.getItem(k)||'{}'); } catch(e){ return {}; } };
+    const strip = (o)=>{ let c; try { c = JSON.parse(JSON.stringify(o||{})); } catch(e){ c = {}; }
+      if (c.signature) c.signature = 'oui';
+      if (c.signatures){ Object.keys(c.signatures).forEach(k=>{ c.signatures[k] = 'oui'; }); }
+      return c; };
+    return { v:1, at:new Date().toISOString(), a:strip(rd('wt_assurance_v1')), d:strip(rd('wt_dossier_v1')), doc:strip(rd('wt_documents_v1')) };
+  }
+  reviewLink(){
+    try {
+      const json = JSON.stringify(this.buildReviewData());
+      const b64 = btoa(unescape(encodeURIComponent(json)));
+      const base = location.href.split('#')[0].split('?')[0].replace(/[^/]*$/, '');
+      return base + 'revision-rh.html#d=' + b64;
+    } catch(e){ return location.href.replace(/[^/]*$/, '') + 'revision-rh.html'; }
+  }
+  sendToRH = () => {
+    const f = this.state.f;
+    const nom = ((f.prenom||'')+' '+(f.nom||'')).trim() || 'nouvel employé';
+    const link = this.reviewLink();
+    const subject = 'Dossier d’embauche à réviser — ' + nom;
+    const body = 'Bonjour,\n\nLe dossier d’embauche de ' + nom + ' est complété (formulaires et documents signés).\n\nOuvrez le lien ci-dessous pour voir la liste de contrôle et remplir la fiche RH interne :\n\n' + link + '\n\nMerci.';
+    try { window.location.href = 'mailto:rh@wtcorporation.ca?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body); } catch(e){}
+  };
+  copyLink = () => {
+    const link = this.reviewLink();
+    const done = () => { this.setState({ linkCopied:true }); setTimeout(()=>{ try{ this.setState({ linkCopied:false }); }catch(e){} }, 2200); };
+    try { navigator.clipboard.writeText(link).then(done, done); } catch(e){ done(); }
+  };
+  openReview = () => { try { window.open(this.reviewLink(), '_blank'); } catch(e){} };
+
   palette(){
     const map = {
       'Chaleureux (orange terracotta)': {main:'#d9682f', soft:'#fdeadd'},
@@ -601,6 +649,8 @@ class Component extends DCLogic {
       onField: this.onField, onPerDoc: this.onPerDoc,
       next: this.next, prev: this.prev, start: this.start, goHome: this.goHome, clearAll: this.clearAll,
       downloadCopy: this.downloadCopy,
+      sendToRH: this.sendToRH, copyLink: this.copyLink, openReview: this.openReview,
+      linkCopied: !!this.state.linkCopied, linkNotCopied: !this.state.linkCopied,
       // doc meta
       docCat: d ? d.cat : '', docTitle: d ? d.title : '', docSub: d ? (d.sub||'') : '',
       docExtra: !!(d && d.extra), docNb: d ? (d.nb||'') : '',

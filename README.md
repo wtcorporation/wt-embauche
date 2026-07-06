@@ -22,8 +22,11 @@ Google Apps Script (/exec) — backend, compte RH
 | `assurance.html` | Partie 1 — Assurance (approbation conducteur) |
 | `dossier-employe.html` | Partie 2 — Dossier employé (paie, contact d'urgence) |
 | `documents-a-signer.html` | Partie 3 — 14 documents à signer |
+| `revision-rh.html` | **Révision RH** — liste de contrôle de complétude + fiche RH interne + export PDF du dossier |
+| `guide-rh.html` | Guide RH imprimable (mise en place du processus) |
 | `Televersement.dc.html` | Composant réutilisable de téléversement (⚠️ ne pas renommer : le runtime le charge par ce nom exact) |
 | `support.js` | Runtime des formulaires (ne pas modifier) |
+| `doc-page.js` | Runtime du document imprimable (utilisé par `guide-rh.html`, ne pas modifier) |
 | `config.js` | **À configurer** : URL `/exec` du Google Apps Script |
 | `assets/logo-wt.png` | Logo |
 | `apps-script/Code.gs` | Backend à coller dans Google Apps Script (ne s'exécute pas sur GitHub) |
@@ -40,6 +43,15 @@ Google Apps Script (/exec) — backend, compte RH
 ## Sécurité et confidentialité
 
 GitHub héberge **uniquement l'interface**. Aucune donnée d'employé, aucune clé API, aucun secret n'est présent dans ce dépôt — l'URL `/exec` dans `config.js` n'est pas un secret. Le NAS n'est pas demandé dans le formulaire (recueilli séparément par RH). Les coordonnées bancaires ne sont jamais sauvegardées dans le navigateur (`localStorage`), jamais envoyées par courriel et jamais écrites dans Google Sheets : elles sont déposées uniquement dans le dossier Drive sécurisé de l'employé. Le `localStorage` est effacé automatiquement après la soumission finale (Partie 3). L'accès au dossier Drive RH doit être restreint aux personnes autorisées.
+
+## Révision RH (interne)
+
+`revision-rh.html` affiche une **liste de contrôle de complétude** (identité, emploi, permis, paie, contact d'urgence, consentements, documents reçus, 14 documents à signer), une **fiche RH interne** éditable (n° d'employé, statut, salaire, etc., sauvegardée localement sur l'appareil RH) et un **export PDF** du dossier complet (Ctrl/Cmd + P). Deux façons d'y accéder :
+
+- **Depuis le hub** (`index.html` → section « Réservé au département RH ») ou depuis la fin de la Partie 2 (accès RH) : la page lit alors les données du `localStorage` de l'appareil courant.
+- **Par lien encodé** : à la fin de la Partie 3, l'écran de confirmation offre « Envoyer le lien par courriel / Copier le lien / Ouvrir la révision ». Le lien contient les données du dossier encodées (`revision-rh.html#d=…`, signatures retirées) pour une révision **d'un appareil à l'autre**. Comme le `localStorage` est effacé après la soumission finale, ce lien est construit à partir d'un instantané capturé **avant** l'effacement.
+
+`guide-rh.html` est un document imprimable décrivant la mise en place du processus (champs obligatoires, modèles de courriel, structure de stockage, sécurité).
 
 ## Format des dossiers et fichiers dans Drive
 

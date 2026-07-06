@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@600;700;800&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700&display=swap" rel="stylesheet" />
+  <style>
+    doc-page:not(:defined){visibility:hidden}
+    body{margin:0;background:#e9e6df}
+  </style>
+</helmet>
+<x-import component-from-global-scope="doc-page" from="./doc-page.js" size="letter" margin="0.8in" hint-size="100%,100%">
+  <div style="font-family:'Nunito Sans',system-ui,sans-serif;color:#2b2e34;font-size:13.2px;line-height:1.62">
+
+    <div style="display:flex;align-items:center;gap:14px;border-bottom:3px solid #d9682f;padding-bottom:16px;margin-bottom:6px">
+      <img src="assets/logo-wt.png" alt="PDR" style="height:32px;width:auto" />
+      <div style="width:1px;height:26px;background:#d2cec5"></div>
+      <span style="font-family:'Figtree',sans-serif;font-weight:700;font-size:13px;color:#5c626b">Groupe WT Corporation · Ressources humaines</span>
+    </div>
+
+    <h1 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:27px;line-height:1.15;margin:20px 0 6px;color:#22252b">Guide de mise en place — Formulaire d'embauche numérique</h1>
+    <p style="font-size:14px;color:#6b6f77;margin:0 0 6px">Comment envoyer le formulaire, stocker les réponses, classer les pièces jointes et rendre le processus d'embauche plus simple et plus professionnel.</p>
+    <p style="font-size:12px;color:#9a968d;margin:0 0 26px">Document interne · confidentiel · destiné au département RH</p>
+
+    <!-- 1 -->
+    <h2 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:18px;color:#d9682f;margin:26px 0 4px">1 · Champs obligatoires et facultatifs</h2>
+    <p style="margin:0 0 12px;color:#5c626b">Le formulaire bloque le passage à l'étape suivante tant que les champs obligatoires ne sont pas remplis. Voici la répartition recommandée.</p>
+    <table style="width:100%;border-collapse:collapse;font-size:12.6px;margin-bottom:6px">
+      <thead><tr style="background:#f4f1ea"><th style="text-align:left;padding:8px 10px;font-family:'Figtree',sans-serif;font-weight:700;border:1px solid #e4e1da;width:34%">Section</th><th style="text-align:left;padding:8px 10px;font-family:'Figtree',sans-serif;font-weight:700;border:1px solid #e4e1da">Obligatoire</th><th style="text-align:left;padding:8px 10px;font-family:'Figtree',sans-serif;font-weight:700;border:1px solid #e4e1da;width:26%">Facultatif</th></tr></thead>
+      <tbody>
+        <tr><td style="padding:8px 10px;border:1px solid #e4e1da;font-weight:600">1 · Personnel</td><td style="padding:8px 10px;border:1px solid #e4e1da">Prénom, nom, date de naissance, adresse, ville, province, code postal, téléphone, courriel, langue</td><td style="padding:8px 10px;border:1px solid #e4e1da">—</td></tr>
+        <tr><td style="padding:8px 10px;border:1px solid #e4e1da;font-weight:600">2 · Emploi</td><td style="padding:8px 10px;border:1px solid #e4e1da">Compagnie, poste, date d'entrée, type d'emploi, département</td><td style="padding:8px 10px;border:1px solid #e4e1da">Supérieur immédiat</td></tr>
+        <tr><td style="padding:8px 10px;border:1px solid #e4e1da;font-weight:600">3 · Permis</td><td style="padding:8px 10px;border:1px solid #e4e1da">Aucun (dépend du poste)</td><td style="padding:8px 10px;border:1px solid #e4e1da">Tous les champs</td></tr>
+        <tr><td style="padding:8px 10px;border:1px solid #e4e1da;font-weight:600">4 · Paie</td><td style="padding:8px 10px;border:1px solid #e4e1da">NAS*, courriel de paie, institution, transit, institution (n°), compte</td><td style="padding:8px 10px;border:1px solid #e4e1da">Spécimen de chèque (recommandé)</td></tr>
+        <tr><td style="padding:8px 10px;border:1px solid #e4e1da;font-weight:600">5 · Urgence</td><td style="padding:8px 10px;border:1px solid #e4e1da">Nom, lien, téléphone</td><td style="padding:8px 10px;border:1px solid #e4e1da">2ᵉ téléphone</td></tr>
+        <tr><td style="padding:8px 10px;border:1px solid #e4e1da;font-weight:600">6 · Documents</td><td style="padding:8px 10px;border:1px solid #e4e1da">Aucun bloquant (relance RH au besoin)</td><td style="padding:8px 10px;border:1px solid #e4e1da">Tous — recommandés</td></tr>
+        <tr><td style="padding:8px 10px;border:1px solid #e4e1da;font-weight:600">7 · Déclaration</td><td style="padding:8px 10px;border:1px solid #e4e1da">Les 4 consentements + signature</td><td style="padding:8px 10px;border:1px solid #e4e1da">—</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:11.6px;color:#8b8880;margin:6px 0 0">* Le NAS peut être rendu facultatif dans le formulaire (bouton « Confidentialité ») si vous préférez le recueillir par un canal sécurisé à l'arrivée.</p>
+
+    <!-- 2 -->
+    <h2 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:18px;color:#d9682f;margin:28px 0 4px">2 · Meilleur format pour l'envoi (courriel ou texto)</h2>
+    <p style="margin:0 0 12px;color:#5c626b">Le formulaire est une page web : il s'envoie par <strong>un seul lien</strong>. Hébergez-le une fois, puis réutilisez le même lien pour chaque nouvel employé — chaque envoi crée une réponse distincte.</p>
+    <p style="font-family:'Figtree',sans-serif;font-weight:700;margin:0 0 5px">Modèle de courriel</p>
+    <div style="background:#fbfaf7;border:1px solid #e4e1da;border-radius:10px;padding:14px 16px;margin:0 0 14px;font-size:12.6px">
+      <p style="margin:0 0 8px"><strong>Objet :</strong> Bienvenue chez Groupe WT Corporation — votre formulaire d'embauche</p>
+      <p style="margin:0 0 8px">Bonjour [Prénom],</p>
+      <p style="margin:0 0 8px">Bienvenue dans l'équipe ! Avant votre entrée en fonction, merci de remplir ce court formulaire (8 à 10 minutes) afin que nous puissions créer votre dossier :</p>
+      <p style="margin:0 0 8px">👉 <span style="color:#d9682f;font-weight:700">[lien du formulaire]</span></p>
+      <p style="margin:0 0 8px">Vous pouvez le remplir depuis votre téléphone et joindre vos documents en photo. Vos réponses sont confidentielles. Pour toute question : [courriel / téléphone RH].</p>
+      <p style="margin:0">Au plaisir,<br />L'équipe RH — Groupe WT Corporation</p>
+    </div>
+    <p style="font-family:'Figtree',sans-serif;font-weight:700;margin:0 0 5px">Modèle de texto (SMS)</p>
+    <div style="background:#fbfaf7;border:1px solid #e4e1da;border-radius:10px;padding:14px 16px;margin:0 0 8px;font-size:12.6px">
+      <p style="margin:0">Bonjour [Prénom], bienvenue chez Groupe WT ! Merci de remplir votre formulaire d'embauche (~8 min, depuis votre téléphone) : [lien]. Des questions ? Répondez à ce message. — RH</p>
+    </div>
+    <p style="font-size:12px;color:#8b8880;margin:6px 0 0">Astuce : utilisez un lien court (ex. Bitly) pour le texto, et un QR code sur les documents papier remis en personne.</p>
+
+    <!-- 3 -->
+    <h2 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:18px;color:#d9682f;margin:28px 0 4px">3 · Structure de stockage des réponses (Google Sheets / Excel)</h2>
+    <p style="margin:0 0 12px;color:#5c626b">Une ligne = un employé. Créez une feuille « Dossiers d'embauche » avec ces colonnes, dans cet ordre :</p>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px">
+      <thead><tr style="background:#f4f1ea"><th style="text-align:left;padding:7px 9px;font-family:'Figtree',sans-serif;font-weight:700;border:1px solid #e4e1da;width:20%">Colonne</th><th style="text-align:left;padding:7px 9px;font-family:'Figtree',sans-serif;font-weight:700;border:1px solid #e4e1da">Contenu</th></tr></thead>
+      <tbody>
+        <tr><td style="padding:7px 9px;border:1px solid #e4e1da;font-weight:600">ID_Employé</td><td style="padding:7px 9px;border:1px solid #e4e1da">Identifiant unique auto (ex. WT-2026-014)</td></tr>
+        <tr><td style="padding:7px 9px;border:1px solid #e4e1da;font-weight:600">Horodatage</td><td style="padding:7px 9px;border:1px solid #e4e1da">Date/heure de soumission</td></tr>
+        <tr><td style="padding:7px 9px;border:1px solid #e4e1da;font-weight:600">Statut_dossier</td><td style="padding:7px 9px;border:1px solid #e4e1da"><strong>Reçu · À valider · Documents manquants · Complet</strong> (menu déroulant + couleur)</td></tr>
+        <tr><td style="padding:7px 9px;border:1px solid #e4e1da;font-weight:600">Prénom, Nom</td><td style="padding:7px 9px;border:1px solid #e4e1da">Identité</td></tr>
+        <tr><td style="padding:7px 9px;border:1px solid #e4e1da;font-weight:600">Coordonnées</td><td style="padding:7px 9px;border:1px solid #e4e1da">Date naissance, adresse, ville, province, code postal, téléphone, courriel, langue</td></tr>
+        <tr><td style="padding:7px 9px;border:1px solid #e4e1da;font-weight:600">Emploi</td><td style="padding:7px 9px;border:1px solid #e4e1da">Compagnie, poste, date d'entrée, type, supérieur, département</td></tr>
+        <tr><td style="padding:7px 9px;border:1px solid #e4e1da;font-weight:600">Permis</td><td style="padding:7px 9px;border:1px solid #e4e1da">N°, classe, expiration, mentions, WreckMaster, niveau, formations</td></tr>
+        <tr><td style="padding:7px 9px;border:1px solid #e4e1da;font-weight:600">Paie</td><td style="padding:7px 9px;border:1px solid #e4e1da">Courriel de paie, banque, transit, institution, compte, <span style="color:#b23b32">NAS (feuille protégée à part)</span></td></tr>
+        <tr><td style="padding:7px 9px;border:1px solid #e4e1da;font-weight:600">Urgence</td><td style="padding:7px 9px;border:1px solid #e4e1da">Nom, lien, téléphone, 2ᵉ téléphone</td></tr>
+        <tr><td style="padding:7px 9px;border:1px solid #e4e1da;font-weight:600">Lien_documents</td><td style="padding:7px 9px;border:1px solid #e4e1da">Lien vers le dossier de pièces jointes de l'employé (voir section 4)</td></tr>
+        <tr><td style="padding:7px 9px;border:1px solid #e4e1da;font-weight:600">Signé / Date_signature</td><td style="padding:7px 9px;border:1px solid #e4e1da">Confirmation + date</td></tr>
+        <tr><td style="padding:7px 9px;border:1px solid #e4e1da;font-weight:600">Note_RH</td><td style="padding:7px 9px;border:1px solid #e4e1da">Suivi interne (relances, validation)</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12px;color:#8b8880;margin:6px 0 0">Isolez les données sensibles (NAS, compte bancaire) dans une <strong>feuille protégée</strong> avec accès restreint, reliée par l'ID_Employé.</p>
+
+    <!-- 4 -->
+    <h2 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:18px;color:#d9682f;margin:28px 0 4px">4 · Classement automatique des pièces jointes par employé</h2>
+    <p style="margin:0 0 10px;color:#5c626b">Créez un dossier par employé, nommé de façon uniforme, avec des fichiers renommés automatiquement. Convention recommandée :</p>
+    <div style="background:#22252b;color:#e8e6e0;border-radius:10px;padding:14px 16px;font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.7;margin:0 0 8px">
+      📁 Dossiers_embauche/<br />
+      &nbsp;&nbsp;📁 WT-2026-014_Tremblay_Marie/<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;📄 WT-2026-014_permis-recto.jpg<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;📄 WT-2026-014_permis-verso.jpg<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;📄 WT-2026-014_specimen-cheque.pdf<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;📄 WT-2026-014_certificat-wreckmaster.pdf<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;📄 WT-2026-014_cv.pdf
+    </div>
+    <p style="font-size:12.4px;color:#5c626b;margin:8px 0 0"><strong>Règle de nommage :</strong> <span style="font-family:ui-monospace,monospace;font-size:11.6px">[ID]_[Nom]_[Prénom]</span> pour le dossier, <span style="font-family:ui-monospace,monospace;font-size:11.6px">[ID]_[type-document]</span> pour chaque fichier. L'ID relie automatiquement le fichier à la bonne ligne du tableur. Un outil d'automatisation (ex. Zapier, Make, ou Google Apps Script) peut créer le dossier, y déposer les fichiers reçus et coller le lien dans la colonne <em>Lien_documents</em>.</p>
+
+    <!-- 5 -->
+    <h2 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:18px;color:#d9682f;margin:28px 0 4px">5 · Sécurité et confidentialité</h2>
+    <ul style="margin:0 0 6px;padding-left:20px;color:#3a3e45">
+      <li style="margin-bottom:5px">Restreindre l'accès au tableur et aux dossiers <strong>au département RH uniquement</strong> (partage par compte nominatif, jamais « toute personne disposant du lien »).</li>
+      <li style="margin-bottom:5px">Conserver le NAS et les coordonnées bancaires dans une feuille protégée séparée ; ne les afficher que si nécessaire.</li>
+      <li style="margin-bottom:5px">Utiliser un hébergement et un stockage sécurisés (HTTPS, Google Workspace ou Microsoft 365 de l'entreprise) — pas de service personnel gratuit.</li>
+      <li style="margin-bottom:5px">Activer une notification par courriel aux RH à chaque nouvelle soumission.</li>
+      <li style="margin-bottom:5px">Purger les pièces jointes des boîtes de réception une fois classées dans le dossier officiel.</li>
+    </ul>
+
+    <!-- 6 -->
+    <h2 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:18px;color:#d9682f;margin:28px 0 4px">6 · Améliorations suggérées</h2>
+    <ul style="margin:0;padding-left:20px;color:#3a3e45">
+      <li style="margin-bottom:5px"><strong>Accusé de réception automatique</strong> à l'employé (courriel de confirmation) en plus de la page « Merci ».</li>
+      <li style="margin-bottom:5px"><strong>Tableau de bord RH</strong> filtrable par statut de dossier pour voir en un coup d'œil qui est « Complet » vs « Documents manquants ».</li>
+      <li style="margin-bottom:5px"><strong>Relance automatique</strong> après 48 h si le formulaire n'est pas soumis, ou si des documents manquent.</li>
+      <li style="margin-bottom:5px"><strong>Validation intelligente</strong> : format du code postal, du transit (5 chiffres) et du NAS (algorithme de Luhn) pour réduire les erreurs de saisie.</li>
+      <li style="margin-bottom:5px"><strong>Champs conditionnels selon le poste</strong> : n'afficher la section Permis/WreckMaster qu'aux postes de remorquage/transport.</li>
+      <li style="margin-bottom:5px"><strong>Version bilingue</strong> (bouton FR/EN) pour les employés anglophones.</li>
+      <li style="margin-bottom:5px"><strong>Génération automatique du dossier employé</strong> (tableur + dossier de fichiers + statut « Reçu ») dès la soumission, via une automatisation.</li>
+    </ul>
+
+    <p style="margin:30px 0 0;padding-top:14px;border-top:1px solid #e4e1da;font-size:11.4px;color:#9a968d">Groupe WT Corporation — Ressources humaines · Document de travail interne · à conserver de façon confidentielle.</p>
+
+  </div>
+</x-import>
+</x-dc>
+</body>
+</html>
