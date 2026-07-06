@@ -66,6 +66,26 @@ const STATUTS = [
   "En validation RH", "Dossier accepté", "Dossier à corriger", "Archivé"
 ];
 
+// ===================== V2 — SUIVI DES DOCUMENTS =====================
+const SHEET_DOCS = "documents_recus";
+const COLONNES_DOCS = ["ID invitation", "Nom employé", "Type document", "Nom fichier", "Date réception", "Statut document", "Lien fichier Drive", "Commentaire RH"];
+const STATUTS_DOC = ["Reçu", "À vérifier", "Vérifié", "À refaire"];
+
+// Documents requis par poste — libellés ALIGNÉS sur les catégories envoyées par
+// les formulaires (fileCategories). Ajustez librement ; un poste absent utilise
+// DOCS_REQUIS_DEFAUT. (Les cases cochées à la création d'invitation restent une
+// indication dans les notes ; le calcul « manquants » se base sur cette table.)
+const DOCS_REQUIS_PAR_POSTE = {
+  "Chauffeur plateforme": ["Permis recto", "Permis verso", "Dossier de conduite C5", "Specimen cheque"],
+  "Chauffeur lourd":      ["Permis recto", "Permis verso", "Dossier de conduite C5", "Specimen cheque"],
+  "Chauffeur classe 1":   ["Permis recto", "Permis verso", "Dossier de conduite C1", "Specimen cheque", "WreckMaster"],
+  "Répartiteur":          ["Specimen cheque", "CV"],
+  "Mécanicien":           ["Specimen cheque", "CV"],
+  "Administration":       ["Specimen cheque", "CV"],
+  "Gestionnaire":         ["Specimen cheque", "CV"]
+};
+const DOCS_REQUIS_DEFAUT = ["Permis recto", "Permis verso", "Specimen cheque"];
+
 // ============================== POINT D'ENTRÉE ==============================
 
 function doPost(e) {
@@ -118,11 +138,15 @@ function handleSubmit_(data, e) {
   logToSheets_(data, submissionId, folder, savedFiles);
   notifyRH_(data, submissionId, folder, savedFiles, employeeName);
 
-  // Rattachement à l'invitation RH (si un token accompagne la soumission).
+  // Rattachement à l'invitation RH + journal des documents reçus (si token).
   if (data.token) {
-    try { markInvitationSubmitted_(data.token, folder, submissionId, data.type); }
-    catch (e2) { logError_(e2, e, "markInvitationSubmitted_"); }
+    try {
+      logDocumentsRecus_(data.token, employeeName, data, folder);
+      markInvitationSubmitted_(data.token, folder, submissionId, data.type);
+    } catch (e2) { logError_(e2, e, "invitation (docs/statut)"); }
   }
+  // Récapitulatif PDF déposé dans le dossier Drive (toutes soumissions).
+  try { generateRecapPdf_(folder, data, employeeName); } catch (e3) { logError_(e3, e, "generateRecapPdf_"); }
 
   return { ok: true, submissionId: submissionId, employeeFolderUrl: folder.getUrl() };
 }
@@ -770,15 +794,102 @@ function updateProgress_(data) {
   return { ok: true };
 }
 
-/** Appelée à la soumission finale : marque « Formulaire complété » + journalise. */
+/** Avancement à la soumission d'une partie (final si type='documents'). */
 function markInvitationSubmitted_(token, folder, submissionId, type) {
   var found = invitationRowByToken_(token);
   if (!found) return;
-  setInvitationField_(token, "Statut", "Formulaire complété");
-  setInvitationField_(token, "% complétion", "100 %");
+  var nouveau = (type === "documents") ? "Formulaire complété" : "Documents partiellement reçus";
+  var actuel = String(found.values[12] || "");
+  if (STATUTS.indexOf(nouveau) > STATUTS.indexOf(actuel)) setInvitationField_(token, "Statut", nouveau);
+  if (type === "documents") setInvitationField_(token, "% complétion", "100 %");
   setInvitationField_(token, "Dernière activité", new Date());
   if (folder && folder.getUrl) setInvitationField_(token, "Lien dossier Drive", folder.getUrl());
-  logActivite_(found.values[0], "Formulaire soumis", (type || "") + " · " + (submissionId || ""), "employé");
+  logActivite_(found.values[0], (type === "documents" ? "Formulaire soumis (final)" : "Partie soumise"), (type || "") + " · " + (submissionId || ""), "employé");
+}
+
+// ==================== V2 — DOCUMENTS REÇUS / MANQUANTS ====================
+
+function getDocsSheet_() {
+  return getOrCreateSheet_(getSpreadsheet_(), SHEET_DOCS, COLONNES_DOCS);
+}
+
+/** Journalise chaque fichier reçu dans documents_recus (statut « Reçu »). */
+function logDocumentsRecus_(token, employeeName, data, folder) {
+  var fichiers = (data && data.fichiers) || [];
+  if (!fichiers.length) return;
+  var found = invitationRowByToken_(token);
+  var idInv = found ? found.values[0] : "";
+  var sheet = getDocsSheet_();
+  var lien = (folder && folder.getUrl) ? folder.getUrl() : "";
+  for (var i = 0; i < fichiers.length; i++) {
+    var f = fichiers[i] || {};
+    sheet.appendRow([idInv, employeeName, String(f.categorie || "Document"), String(f.nom || ""), new Date(), "Reçu", lien, ""]);
+  }
+}
+
+function docsRequisPour_(poste) {
+  return DOCS_REQUIS_PAR_POSTE[poste] || DOCS_REQUIS_DEFAUT;
+}
+
+/** RH — détails d'un dossier : infos + documents reçus + requis + manquants. */
+function rhGetDossier(token) {
+  requireRH_();
+  var found = invitationRowByToken_(token);
+  if (!found) return { ok: false, error: "Invitation introuvable." };
+  var rec = invitationToObject_(found.values);
+
+  var vals = getDocsSheet_().getDataRange().getValues();
+  var recus = [], typesRecus = {};
+  for (var r = 1; r < vals.length; r++) {
+    if (String(vals[r][0]) === String(rec.id)) {
+      recus.push({ type: vals[r][2], fichier: vals[r][3], date: vals[r][4], statut: vals[r][5], lien: vals[r][6], commentaire: vals[r][7], row: r + 1 });
+      typesRecus[String(vals[r][2])] = true;
+    }
+  }
+  var requis = docsRequisPour_(rec.poste);
+  var manquants = requis.filter(function (t) { return !typesRecus[t]; });
+  return { ok: true, dossier: rec, documentsRecus: recus, documentsRequis: requis, documentsManquants: manquants, statutsDoc: STATUTS_DOC };
+}
+
+/** RH — change le statut d'un document reçu (par n° de ligne fourni par rhGetDossier). */
+function rhSetDocStatus(rowIndex, statut, commentaire) {
+  var user = requireRH_();
+  if (STATUTS_DOC.indexOf(statut) === -1) return { ok: false, error: "Statut de document invalide." };
+  var sheet = getDocsSheet_();
+  rowIndex = parseInt(rowIndex, 10);
+  if (!(rowIndex >= 2 && rowIndex <= sheet.getLastRow())) return { ok: false, error: "Ligne introuvable." };
+  sheet.getRange(rowIndex, 6).setValue(statut);
+  if (typeof commentaire !== "undefined" && commentaire !== null) sheet.getRange(rowIndex, 8).setValue(commentaire);
+  logActivite_(sheet.getRange(rowIndex, 1).getValue(), "Statut document modifié", statut + (commentaire ? (" — " + commentaire) : ""), user);
+  return { ok: true };
+}
+
+/** RH — décision de validation : « Dossier accepté » ou « Dossier à corriger ». */
+function rhValidate(token, decision, commentaire) {
+  var user = requireRH_();
+  var map = { accepte: "Dossier accepté", corriger: "Dossier à corriger" };
+  var statut = map[decision];
+  if (!statut) return { ok: false, error: "Décision invalide." };
+  var found = invitationRowByToken_(token);
+  if (!found) return { ok: false, error: "Invitation introuvable." };
+  setInvitationField_(token, "Statut", statut);
+  setInvitationField_(token, "Dernière activité", new Date());
+  if (commentaire) rhAddNote(token, "[Validation] " + statut + " — " + commentaire);
+  logActivite_(found.values[0], "Dossier validé (RH)", statut + (commentaire ? (" — " + commentaire) : ""), user);
+  return { ok: true, statut: statut };
+}
+
+/** Récapitulatif PDF (texte, fiable) déposé dans le dossier Drive de l'employé. */
+function generateRecapPdf_(folder, data, employeeName) {
+  var resume = buildResumeTexte_(data, employeeName);
+  var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); };
+  var titre = TYPES_FORMULAIRE[data.type] || "Soumission";
+  var html = '<div style="font-family:Arial;font-size:12px;color:#22252b">'
+    + '<h2 style="color:#d9682f">Groupe WT Corporation — ' + esc(titre) + '</h2>'
+    + '<pre style="font-family:Arial;font-size:12px;white-space:pre-wrap">' + esc(resume) + '</pre></div>';
+  var pdf = Utilities.newBlob(html, "text/html", "tmp.html").getAs("application/pdf")
+    .setName("Recapitulatif " + (data.type || "") + " - " + employeeName + ".pdf");
+  createFileWithVersioning_(folder, pdf, pdf.getName());
 }
 
 // ============================== TEST MANUEL ==============================
