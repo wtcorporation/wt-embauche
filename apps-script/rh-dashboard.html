@@ -8,7 +8,7 @@
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:'Nunito Sans',system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
   h1,h2,h3,label,button,.tag{font-family:'Figtree','Nunito Sans',system-ui,sans-serif}
-  .wrap{max-width:1080px;margin:0 auto;padding:22px 16px 60px}
+  .wrap{max-width:1160px;margin:0 auto;padding:22px 16px 60px}
   header.top{display:flex;align-items:center;gap:14px;padding:8px 4px 20px}
   header.top .brand{font-weight:800;font-size:18px}
   header.top .who{margin-left:auto;font-size:13px;color:var(--muted)}
@@ -25,6 +25,8 @@
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 20px;font-weight:700;font-size:14.5px;color:#fff;background:var(--accent);border:none;border-radius:11px;cursor:pointer}
   .btn.sec{color:#3a3e45;background:#fff;border:1.6px solid #e0ddd6}
   .btn.sm{padding:7px 12px;font-size:12.5px;border-radius:9px}
+  .btn.ok{background:#2f7d55}
+  .btn.warn{background:#c0392b}
   .btn:disabled{opacity:.5;cursor:default}
   .row-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
   table{width:100%;border-collapse:collapse;font-size:13px}
@@ -32,6 +34,9 @@
   th{font-family:'Figtree',sans-serif;font-weight:700;font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;color:#9a968d;white-space:nowrap}
   .tablewrap{overflow-x:auto}
   .tag{display:inline-block;font-weight:700;font-size:11.5px;padding:3px 9px;border-radius:99px;background:#f0ede6;color:#6b6f77;white-space:nowrap}
+  .tag.green{background:#eaf6ef;color:#2f7d55}
+  .tag.orange{background:#fdf0e6;color:#b26a29}
+  .tag.red{background:#fdecea;color:#c0392b}
   .muted{color:var(--muted)}
   a{color:#2a5db0}
   .msg{padding:12px 15px;border-radius:11px;font-size:14px;margin:0 0 14px;display:none}
@@ -41,17 +46,29 @@
   .result code{display:block;background:#fff;border:1px solid #d7e0f0;border-radius:8px;padding:9px 11px;font-size:12.5px;word-break:break-all;margin:5px 0 10px}
   #gate{max-width:520px;margin:60px auto;text-align:center}
   .spin{color:var(--muted);font-size:14px;padding:8px 0}
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+  .toolbar input,.toolbar select{width:auto;min-width:160px}
+  /* Modal détail */
+  .overlay{position:fixed;inset:0;background:rgba(30,26,22,.45);display:none;align-items:flex-start;justify-content:center;padding:24px;overflow:auto;z-index:50}
+  .overlay.show{display:flex}
+  .modal{background:#fff;border-radius:18px;max-width:720px;width:100%;padding:24px;box-shadow:0 30px 80px -30px rgba(0,0,0,.5)}
+  .modal h2{margin:0}
+  .modal .close{margin-left:auto;background:none;border:none;font-size:22px;cursor:pointer;color:#9a968d}
+  .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;background:#fbfaf7;border:1px solid #eae7df;border-radius:12px;padding:14px;margin:12px 0}
+  .kv div .l{font-size:11px;font-weight:700;color:#9a968d;text-transform:uppercase;letter-spacing:.4px}
+  .kv div .v{font-size:14px;color:#3a3e45}
+  .docrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #f5f2ec}
+  .docrow .name{flex:1;min-width:140px;font-size:13.5px}
+  pre.notes{white-space:pre-wrap;background:#fbfaf7;border:1px solid #eae7df;border-radius:10px;padding:12px;font-family:inherit;font-size:13px;color:#3a3e45;margin:6px 0 0}
 </style>
 </head>
 <body>
 
-<!-- Écran d'accès refusé / chargement -->
 <div id="gate" class="card" style="display:none">
   <h2 id="gateTitle">Portail RH — WT Corporation</h2>
   <p id="gateMsg" class="muted">Vérification de votre accès…</p>
 </div>
 
-<!-- Application -->
 <div id="app" class="wrap" style="display:none">
   <header class="top">
     <span class="brand">Portail RH — Embauche WT Corporation</span>
@@ -103,10 +120,10 @@
       <div class="docs" id="docsReq">
         <label class="chk"><input type="checkbox" value="Permis recto"> Permis recto</label>
         <label class="chk"><input type="checkbox" value="Permis verso"> Permis verso</label>
-        <label class="chk"><input type="checkbox" value="Dossier de conduite"> Dossier de conduite</label>
-        <label class="chk"><input type="checkbox" value="Spécimen de chèque"> Spécimen de chèque</label>
-        <label class="chk"><input type="checkbox" value="Documents d'assurance"> Documents d'assurance</label>
-        <label class="chk"><input type="checkbox" value="Certificat WreckMaster"> Certificat WreckMaster</label>
+        <label class="chk"><input type="checkbox" value="Dossier de conduite C5"> Dossier de conduite C5</label>
+        <label class="chk"><input type="checkbox" value="Dossier de conduite C1"> Dossier de conduite C1</label>
+        <label class="chk"><input type="checkbox" value="Specimen cheque"> Spécimen de chèque</label>
+        <label class="chk"><input type="checkbox" value="WreckMaster"> WreckMaster</label>
         <label class="chk"><input type="checkbox" value="CV"> CV</label>
       </div>
     </div>
@@ -135,12 +152,22 @@
       <h2 style="margin:0">Dossiers d'embauche</h2>
       <button class="btn sm sec" onclick="loadList()" style="margin-left:auto">↻ Actualiser</button>
     </div>
+    <div class="toolbar">
+      <input id="search" type="search" placeholder="🔍 Rechercher (nom, courriel…)" oninput="renderList()">
+      <select id="filterStatut" onchange="renderList()"><option value="">Tous les statuts</option></select>
+      <select id="sortBy" onchange="renderList()">
+        <option value="activite">Trier : dernière activité</option>
+        <option value="creation">Trier : date de création</option>
+        <option value="nom">Trier : nom</option>
+      </select>
+      <span id="count" class="muted" style="font-size:12.5px"></span>
+    </div>
     <div id="listMsg" class="spin">Chargement…</div>
     <div class="tablewrap">
       <table id="tbl" style="display:none">
         <thead><tr>
           <th>Employé</th><th>Contact</th><th>Compagnie / Poste</th>
-          <th>Créée</th><th>Dernière activité</th><th>Statut</th><th>%</th><th>Actions</th>
+          <th>Créée</th><th>Activité</th><th>Statut</th><th>%</th><th>Docs manquants</th><th>Actions</th>
         </tr></thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -148,14 +175,18 @@
   </section>
 </div>
 
+<!-- Modal détail -->
+<div id="overlay" class="overlay" onclick="if(event.target===this)closeDetail()">
+  <div class="modal" id="modal"></div>
+</div>
+
 <script>
-  var STATUTS = [];
+  var STATUTS = [], STATUTS_DOC = [], ALL = [], CURRENT = null;
 
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function fmt(d){ if(!d) return ''; try{ var x=new Date(d); if(isNaN(x)) return String(d); return x.toLocaleString('fr-CA',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}); }catch(e){ return String(d); } }
-  function show(id,cls,txt){ var el=document.getElementById(id); el.className=(id==='listMsg'?'':'msg ')+cls; el.textContent=txt; el.style.display='block'; }
+  function show(id,cls,txt){ var el=document.getElementById(id); el.className='msg '+cls; el.textContent=txt; el.style.display='block'; }
 
-  // -------- Authentification --------
   window.addEventListener('load', function(){
     document.getElementById('gate').style.display='block';
     google.script.run.withSuccessHandler(onWho).withFailureHandler(onFatal).rhWhoAmI();
@@ -163,6 +194,8 @@
   function onWho(res){
     if(res && res.ok){
       STATUTS = res.statuts || [];
+      var fs=document.getElementById('filterStatut');
+      STATUTS.forEach(function(s){ var o=document.createElement('option'); o.value=s; o.textContent=s; fs.appendChild(o); });
       document.getElementById('gate').style.display='none';
       document.getElementById('app').style.display='block';
       document.getElementById('who').textContent='Connecté : '+res.email;
@@ -189,7 +222,6 @@
     var docs=[]; document.querySelectorAll('#docsReq input:checked').forEach(function(c){ docs.push(c.value); });
     var notes = document.getElementById('notes').value.trim();
     if(docs.length) notes = (notes?notes+'\n':'')+'Documents requis : '+docs.join(', ');
-
     var payload = {
       prenom: document.getElementById('prenom').value.trim(),
       nom: document.getElementById('nom').value.trim(),
@@ -203,7 +235,6 @@
       envoyerCourriel: document.getElementById('envoyerCourriel').checked
     };
     if(!payload.prenom || !payload.nom){ show('createMsg','err','Le prénom et le nom sont requis.'); return; }
-
     var btn=document.getElementById('btnCreate'); btn.disabled=true; btn.textContent='Création…';
     document.getElementById('createMsg').style.display='none';
     google.script.run
@@ -213,15 +244,11 @@
         show('createMsg','ok','Invitation '+res.invitationId+' créée'+(res.courrielEnvoye?' et courriel envoyé.':'.'));
         document.getElementById('rLink').textContent=res.lien;
         document.getElementById('rSms').textContent=res.sms;
-        var d=document.getElementById('rDrive'); d.href=res.lienDrive||'#';
+        document.getElementById('rDrive').href=res.lienDrive||'#';
         document.getElementById('result').style.display='block';
-        clearForm();
-        loadList();
+        clearForm(); loadList();
       })
-      .withFailureHandler(function(err){
-        btn.disabled=false; btn.textContent="Créer l'invitation";
-        show('createMsg','err',String(err && err.message ? err.message : err));
-      })
+      .withFailureHandler(function(err){ btn.disabled=false; btn.textContent="Créer l'invitation"; show('createMsg','err',String(err && err.message ? err.message : err)); })
       .rhCreateInvitation(payload);
   }
   function clearForm(){
@@ -231,7 +258,7 @@
     document.querySelectorAll('#docsReq input:checked').forEach(function(c){ c.checked=false; });
   }
 
-  // -------- Liste --------
+  // -------- Liste + filtres/tri --------
   function loadList(){
     document.getElementById('listMsg').style.display='block';
     document.getElementById('listMsg').textContent='Chargement…';
@@ -239,20 +266,39 @@
     google.script.run
       .withSuccessHandler(function(res){
         if(!res || !res.ok){ document.getElementById('listMsg').textContent=(res&&res.error)||'Erreur de chargement.'; return; }
-        renderList(res.invitations||[]);
+        ALL = res.invitations||[]; renderList();
       })
       .withFailureHandler(function(err){ document.getElementById('listMsg').textContent=String(err && err.message ? err.message : err); })
       .rhListInvitations();
   }
   function statusSelect(inv){
     var o = STATUTS.map(function(s){ return '<option'+(s===inv.statut?' selected':'')+'>'+esc(s)+'</option>'; }).join('');
-    return '<select class="btn sm sec" style="color:#3a3e45;padding:6px 8px" onchange="setStatus(\''+esc(inv.token)+'\', this.value)">'+o+'</select>';
+    return '<select style="min-width:170px;padding:6px 8px;font-size:12.5px" onchange="setStatus(\''+esc(inv.token)+'\', this.value)">'+o+'</select>';
   }
-  function renderList(list){
-    document.getElementById('listMsg').style.display='none';
+  function manqueBadge(inv){
+    var n = (inv.documentsManquants||[]).length;
+    if(!inv.documentsRequisCount) return '<span class="tag">—</span>';
+    if(n===0) return '<span class="tag green">Complet</span>';
+    return '<span class="tag orange" title="'+esc((inv.documentsManquants||[]).join(', '))+'">'+n+' manquant'+(n>1?'s':'')+'</span>';
+  }
+  function renderList(){
+    if(!ALL.length){ document.getElementById('listMsg').style.display='block'; document.getElementById('listMsg').textContent='Aucune invitation pour l\'instant.'; document.getElementById('tbl').style.display='none'; document.getElementById('count').textContent=''; return; }
+    var q=(document.getElementById('search').value||'').toLowerCase().trim();
+    var fstat=document.getElementById('filterStatut').value;
+    var sort=document.getElementById('sortBy').value;
+    var rows=ALL.filter(function(inv){
+      if(fstat && inv.statut!==fstat) return false;
+      if(q){ var hay=((inv.prenom||'')+' '+(inv.nom||'')+' '+(inv.courriel||'')+' '+(inv.poste||'')).toLowerCase(); if(hay.indexOf(q)<0) return false; }
+      return true;
+    });
+    rows.sort(function(a,b){
+      if(sort==='nom') return String(a.nom||'').localeCompare(String(b.nom||''));
+      var ka=new Date(sort==='creation'?a.dateCreation:a.derniereActivite).getTime()||0;
+      var kb=new Date(sort==='creation'?b.dateCreation:b.derniereActivite).getTime()||0;
+      return kb-ka;
+    });
     var tb=document.getElementById('tbody'); tb.innerHTML='';
-    if(!list.length){ document.getElementById('listMsg').style.display='block'; document.getElementById('listMsg').textContent='Aucune invitation pour l\'instant.'; return; }
-    list.slice().reverse().forEach(function(inv){
+    rows.forEach(function(inv){
       var tr=document.createElement('tr');
       tr.innerHTML =
         '<td><strong>'+esc(inv.nom)+' '+esc(inv.prenom)+'</strong><br><span class="muted" style="font-size:11.5px">'+esc(inv.id)+'</span></td>'+
@@ -262,35 +308,95 @@
         '<td>'+esc(fmt(inv.derniereActivite))+'</td>'+
         '<td>'+statusSelect(inv)+'</td>'+
         '<td><span class="tag">'+esc(inv.completion||'0 %')+'</span></td>'+
+        '<td>'+manqueBadge(inv)+'</td>'+
         '<td><div class="row-actions">'+
+          '<button class="btn sm" onclick="openDetail(\''+esc(inv.token)+'\')">Détail</button>'+
           '<button class="btn sm sec" onclick="copyText(\''+esc(inv.lienFormulaire)+'\', this)">Lien</button>'+
           '<button class="btn sm sec" onclick="resend(\''+esc(inv.token)+'\')">Relancer</button>'+
-          '<button class="btn sm sec" onclick="addNote(\''+esc(inv.token)+'\')">Note</button>'+
-          (inv.lienDrive?'<a class="btn sm sec" style="text-decoration:none" target="_blank" href="'+esc(inv.lienDrive)+'">Drive</a>':'')+
         '</div></td>';
       tb.appendChild(tr);
     });
-    document.getElementById('tbl').style.display='';
+    document.getElementById('listMsg').style.display = rows.length? 'none':'block';
+    if(!rows.length) document.getElementById('listMsg').textContent='Aucun résultat pour ce filtre.';
+    document.getElementById('tbl').style.display = rows.length? '':'none';
+    document.getElementById('count').textContent = rows.length+' / '+ALL.length+' dossier(s)';
   }
 
-  // -------- Actions ligne --------
+  // -------- Actions rapides --------
   function setStatus(token, statut){
-    google.script.run.withSuccessHandler(function(res){ if(!res||!res.ok) alert((res&&res.error)||'Échec.'); })
+    google.script.run.withSuccessHandler(function(res){ if(res&&res.ok){ var i=ALL.find(function(x){return x.token===token;}); if(i)i.statut=statut; } else alert((res&&res.error)||'Échec.'); })
       .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); }).rhUpdateStatus(token, statut);
   }
   function resend(token){
     if(!confirm('Envoyer un courriel de relance à cet employé ?')) return;
-    google.script.run.withSuccessHandler(function(res){ alert(res&&res.ok?'Relance envoyée.':((res&&res.error)||'Échec.')); loadList(); })
+    google.script.run.withSuccessHandler(function(res){ alert(res&&res.ok?'Relance envoyée.':((res&&res.error)||'Échec.')); })
       .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); }).rhResendInvitation(token);
   }
-  function addNote(token){
-    var note=prompt('Note interne (visible RH seulement) :');
-    if(!note) return;
-    google.script.run.withSuccessHandler(function(res){ if(res&&res.ok){ alert('Note ajoutée.'); } else { alert((res&&res.error)||'Échec.'); } })
-      .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); }).rhAddNote(token, note);
+
+  // -------- Vue détail --------
+  function openDetail(token){
+    document.getElementById('overlay').classList.add('show');
+    document.getElementById('modal').innerHTML='<p class="spin">Chargement du dossier…</p>';
+    google.script.run
+      .withSuccessHandler(function(res){ if(!res||!res.ok){ document.getElementById('modal').innerHTML='<p class="msg err" style="display:block">'+esc((res&&res.error)||'Erreur')+'</p>'; return; } CURRENT=res; renderDetail(res); })
+      .withFailureHandler(function(e){ document.getElementById('modal').innerHTML='<p class="msg err" style="display:block">'+esc(String(e&&e.message?e.message:e))+'</p>'; })
+      .rhGetDossier(token);
+  }
+  function closeDetail(){ document.getElementById('overlay').classList.remove('show'); }
+
+  function renderDetail(res){
+    var d=res.dossier, recus=res.documentsRecus||[], manq=res.documentsManquants||[], sdoc=res.statutsDoc||[];
+    var kv=function(l,v){ return '<div><div class="l">'+esc(l)+'</div><div class="v">'+(esc(v)||'—')+'</div></div>'; };
+    var docStatutSel=function(item){
+      var o=sdoc.map(function(s){ return '<option'+(s===item.statut?' selected':'')+'>'+esc(s)+'</option>'; }).join('');
+      return '<select data-row="'+item.row+'" style="min-width:130px;padding:6px 8px;font-size:12.5px">'+o+'</select>';
+    };
+    var recusHtml = recus.length ? recus.map(function(it){
+      return '<div class="docrow"><span class="name">'+esc(it.type)+' <span class="muted">'+esc(it.fichier||'')+'</span></span>'+
+        docStatutSel(it)+
+        '<input data-cmt="'+it.row+'" placeholder="Commentaire" value="'+esc(it.commentaire||'')+'" style="min-width:150px;padding:6px 8px;font-size:12.5px">'+
+        '<button class="btn sm sec" onclick="saveDocStatus('+it.row+')">Enregistrer</button></div>';
+    }).join('') : '<p class="muted">Aucun document reçu pour l\'instant.</p>';
+    var manqHtml = manq.length ? manq.map(function(t){ return '<span class="tag red" style="margin:3px 4px 0 0">'+esc(t)+'</span>'; }).join('') : '<span class="tag green">Aucun document manquant</span>';
+
+    document.getElementById('modal').innerHTML =
+      '<div style="display:flex;align-items:center;gap:10px"><h2>'+esc(d.nom)+' '+esc(d.prenom)+'</h2><button class="close" onclick="closeDetail()">✕</button></div>'+
+      '<div class="muted" style="font-size:12.5px">'+esc(d.id)+' · '+esc(d.statut)+' · '+esc(d.completion||'0 %')+'</div>'+
+      '<div class="kv">'+kv('Courriel',d.courriel)+kv('Téléphone',d.telephone)+kv('Compagnie',d.compagnie)+kv('Poste',d.poste)+kv('Date d\'entrée',d.dateEntree)+kv('Gestionnaire',d.gestionnaire)+'</div>'+
+      '<div class="row-actions" style="margin-bottom:6px">'+
+        (d.lienDrive?'<a class="btn sm sec" target="_blank" style="text-decoration:none" href="'+esc(d.lienDrive)+'">📁 Dossier Drive (+ récap PDF)</a>':'')+
+        '<button class="btn sm sec" onclick="copyText(\''+esc(d.lienFormulaire)+'\', this)">Copier le lien formulaire</button>'+
+      '</div>'+
+      '<h3 style="margin:18px 0 4px">Documents reçus</h3>'+recusHtml+
+      '<h3 style="margin:18px 0 6px">Documents manquants</h3><div>'+manqHtml+'</div>'+
+      '<h3 style="margin:18px 0 4px">Notes internes</h3><pre class="notes">'+(esc(d.notes)||'(aucune)')+'</pre>'+
+      '<div style="display:flex;gap:8px;margin-top:8px"><input id="newNote" placeholder="Ajouter une note interne…"><button class="btn sm sec" onclick="addNote(\''+esc(d.token)+'\')">Ajouter</button></div>'+
+      '<h3 style="margin:20px 0 6px">Validation RH</h3>'+
+      '<input id="valCmt" placeholder="Commentaire de validation (optionnel)" style="margin-bottom:8px">'+
+      '<div class="row-actions">'+
+        '<button class="btn ok" onclick="validate(\''+esc(d.token)+'\',\'accepte\')">✓ Dossier accepté</button>'+
+        '<button class="btn warn" onclick="validate(\''+esc(d.token)+'\',\'corriger\')">✗ Dossier à corriger</button>'+
+      '</div>';
   }
 
-  // -------- Utilitaires --------
+  function saveDocStatus(row){
+    var sel=document.querySelector('select[data-row="'+row+'"]');
+    var cmt=document.querySelector('input[data-cmt="'+row+'"]');
+    google.script.run.withSuccessHandler(function(res){ if(!res||!res.ok) alert((res&&res.error)||'Échec.'); else { var b=event&&event.target; if(b){ b.textContent='✓'; setTimeout(function(){b.textContent='Enregistrer';},1200);} } })
+      .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); })
+      .rhSetDocStatus(row, sel.value, cmt.value);
+  }
+  function addNote(token){
+    var v=document.getElementById('newNote').value.trim(); if(!v) return;
+    google.script.run.withSuccessHandler(function(res){ if(res&&res.ok){ openDetail(token); } else alert((res&&res.error)||'Échec.'); })
+      .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); }).rhAddNote(token, v);
+  }
+  function validate(token, decision){
+    var cmt=document.getElementById('valCmt').value.trim();
+    google.script.run.withSuccessHandler(function(res){ if(res&&res.ok){ alert('Statut : '+res.statut); closeDetail(); loadList(); } else alert((res&&res.error)||'Échec.'); })
+      .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); }).rhValidate(token, decision, cmt);
+  }
+
   function copyText(txt, btn){
     var done=function(){ var t=btn.textContent; btn.textContent='✓ Copié'; setTimeout(function(){ btn.textContent=t; },1500); };
     try{ navigator.clipboard.writeText(txt).then(done, done); }catch(e){ done(); }

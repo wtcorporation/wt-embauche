@@ -704,13 +704,27 @@ function rhCreateInvitation(payload) {
   };
 }
 
-/** RH — liste toutes les invitations pour le tableau de bord. */
+/** RH — liste toutes les invitations (+ documents manquants) pour le tableau de bord. */
 function rhListInvitations() {
   requireRH_();
   var values = getInvitationsSheet_().getDataRange().getValues();
+  // Types de documents reçus par invitation (une seule lecture de documents_recus).
+  var docVals = getDocsSheet_().getDataRange().getValues();
+  var recuParInv = {};
+  for (var d = 1; d < docVals.length; d++) {
+    var id = String(docVals[d][0]);
+    if (!recuParInv[id]) recuParInv[id] = {};
+    recuParInv[id][String(docVals[d][2])] = true;
+  }
   var out = [];
   for (var r = 1; r < values.length; r++) {
-    if (values[r][0]) out.push(invitationToObject_(values[r]));
+    if (!values[r][0]) continue;
+    var inv = invitationToObject_(values[r]);
+    var requis = docsRequisPour_(inv.poste);
+    var recus = recuParInv[String(inv.id)] || {};
+    inv.documentsManquants = requis.filter(function (t) { return !recus[t]; });
+    inv.documentsRequisCount = requis.length;
+    out.push(inv);
   }
   return { ok: true, invitations: out };
 }
