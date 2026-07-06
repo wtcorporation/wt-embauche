@@ -265,10 +265,11 @@
     document.getElementById('tbl').style.display='none';
     google.script.run
       .withSuccessHandler(function(res){
-        if(!res || !res.ok){ document.getElementById('listMsg').textContent=(res&&res.error)||'Erreur de chargement.'; return; }
+        if(res===null||res===undefined){ document.getElementById('listMsg').textContent='Réponse vide du serveur (res=null). Redéployez le Portail RH en nouvelle version.'; return; }
+        if(!res.ok){ document.getElementById('listMsg').textContent='Erreur : '+(res.error||JSON.stringify(res)); return; }
         ALL = res.invitations||[]; renderList();
       })
-      .withFailureHandler(function(err){ document.getElementById('listMsg').textContent=String(err && err.message ? err.message : err); })
+      .withFailureHandler(function(err){ document.getElementById('listMsg').textContent='Échec serveur : '+(err && err.message ? err.message : err); })
       .rhListInvitations();
   }
   function statusSelect(inv){

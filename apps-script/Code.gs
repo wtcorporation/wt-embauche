@@ -623,12 +623,18 @@ function invitationRowByToken_(token) {
   return null;
 }
 
+// Coercition en valeur sérialisable par google.script.run (Date -> chaîne).
+function dcStr_(x) {
+  if (x instanceof Date) return Utilities.formatDate(x, Session.getScriptTimeZone() || "America/Toronto", "yyyy-MM-dd HH:mm");
+  return (x == null) ? "" : x;
+}
+
 function invitationToObject_(v) {
   return {
-    id: v[0], token: v[1], dateCreation: v[2], creePar: v[3], prenom: v[4], nom: v[5],
-    courriel: v[6], telephone: v[7], compagnie: v[8], poste: v[9], dateEntree: v[10],
-    gestionnaire: v[11], statut: v[12], completion: v[13], derniereActivite: v[14],
-    lienFormulaire: v[15], lienDrive: v[16], notes: v[17]
+    id: dcStr_(v[0]), token: dcStr_(v[1]), dateCreation: dcStr_(v[2]), creePar: dcStr_(v[3]), prenom: dcStr_(v[4]), nom: dcStr_(v[5]),
+    courriel: dcStr_(v[6]), telephone: dcStr_(v[7]), compagnie: dcStr_(v[8]), poste: dcStr_(v[9]), dateEntree: dcStr_(v[10]),
+    gestionnaire: dcStr_(v[11]), statut: dcStr_(v[12]), completion: dcStr_(v[13]), derniereActivite: dcStr_(v[14]),
+    lienFormulaire: dcStr_(v[15]), lienDrive: dcStr_(v[16]), notes: dcStr_(v[17])
   };
 }
 
@@ -866,7 +872,7 @@ function rhGetDossier(token) {
   var recus = [], typesRecus = {};
   for (var r = 1; r < vals.length; r++) {
     if (String(vals[r][0]) === String(rec.id)) {
-      recus.push({ type: vals[r][2], fichier: vals[r][3], date: vals[r][4], statut: vals[r][5], lien: vals[r][6], commentaire: vals[r][7], row: r + 1 });
+      recus.push({ type: dcStr_(vals[r][2]), fichier: dcStr_(vals[r][3]), date: dcStr_(vals[r][4]), statut: dcStr_(vals[r][5]), lien: dcStr_(vals[r][6]), commentaire: dcStr_(vals[r][7]), row: r + 1 });
       typesRecus[String(vals[r][2])] = true;
     }
   }
@@ -931,11 +937,11 @@ function ficheRowByToken_(token) {
 
 function ficheToObject_(v) {
   return {
-    salaire: v[2], vacances: v[3],
-    cellNumero: v[4], cellMarque: v[5], cellModele: v[6], cellSerie: v[7],
-    portMarque: v[8], portModele: v[9], portSerie: v[10],
-    courrielCompagnie: v[11], utilisateur: v[12], motDePasseTemp: v[13], codeFuel: v[14],
-    majPar: v[15], majDate: v[16]
+    salaire: dcStr_(v[2]), vacances: dcStr_(v[3]),
+    cellNumero: dcStr_(v[4]), cellMarque: dcStr_(v[5]), cellModele: dcStr_(v[6]), cellSerie: dcStr_(v[7]),
+    portMarque: dcStr_(v[8]), portModele: dcStr_(v[9]), portSerie: dcStr_(v[10]),
+    courrielCompagnie: dcStr_(v[11]), utilisateur: dcStr_(v[12]), motDePasseTemp: dcStr_(v[13]), codeFuel: dcStr_(v[14]),
+    majPar: dcStr_(v[15]), majDate: dcStr_(v[16])
   };
 }
 
