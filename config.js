@@ -12,5 +12,5 @@
    ni ailleurs dans ce dépôt GitHub.
    ============================================================ */
 window.WT_CONFIG = {
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzwk_KrDByiCIAPi3yt_tZo9EzcVHERBr6fU_P_eAGWhHvctAK5tkLCIy0SYibeuWmqtQ/exec"
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxfWP_Nb3Gseu05HZ93zPJVAwiCkyJSCabdQXlx35GeyEQafwMV19JrcSc2qf6yAqT8FQ/exec"
 };
