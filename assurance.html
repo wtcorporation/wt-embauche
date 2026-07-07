@@ -138,9 +138,11 @@
           <p style="font-size:15px;color:#6b6f77;margin:0 0 20px;line-height:1.55">Ajoutez les documents demandés. Vous pouvez prendre une photo claire avec votre téléphone ou téléverser un PDF.</p>
           <dc-import name="Televersement" title="Permis de conduire — recto" hint="Photo claire ou PDF" option-label="Requis" slot="permisRecto" multiple="{{ false }}" files="{{ files_permisRecto }}" error="{{ fileErr_permisRecto }}" on-file="{{ onFile }}" on-remove="{{ onRemoveFile }}" hint-size="100%,150px"></dc-import>
           <dc-import name="Televersement" title="Permis de conduire — verso" hint="Photo claire ou PDF" option-label="Requis" slot="permisVerso" multiple="{{ false }}" files="{{ files_permisVerso }}" error="{{ fileErr_permisVerso }}" on-file="{{ onFile }}" on-remove="{{ onRemoveFile }}" hint-size="100%,150px"></dc-import>
+          <sc-if value="{{ assurReq }}" hint-placeholder-val="{{ true }}">
           <dc-import name="Televersement" title="Dossier de conduite — classe 5" hint="Photo claire ou PDF" option-label="Requis" slot="dossierC5" multiple="{{ false }}" files="{{ files_dossierC5 }}" error="{{ fileErr_dossierC5 }}" on-file="{{ onFile }}" on-remove="{{ onRemoveFile }}" hint-size="100%,150px"></dc-import>
           <dc-import name="Televersement" title="Dossier de conduite — classe 1" hint="Photo claire ou PDF" option-label="Requis" slot="dossierC1" multiple="{{ false }}" files="{{ files_dossierC1 }}" error="{{ fileErr_dossierC1 }}" on-file="{{ onFile }}" on-remove="{{ onRemoveFile }}" hint-size="100%,150px"></dc-import>
           <dc-import name="Televersement" title="Certificat WreckMaster" hint="Si applicable" option-label="Si applicable" slot="wreckCert" multiple="{{ false }}" files="{{ files_wreckCert }}" error="{{ fileErr_wreckCert }}" on-file="{{ onFile }}" on-remove="{{ onRemoveFile }}" hint-size="100%,150px"></dc-import>
+          </sc-if>
         </div>
       </sc-if>
 
@@ -148,8 +150,8 @@
       <sc-if value="{{ isStep5 }}" hint-placeholder-val="">
         <div>
           <p style="font-size:15px;color:#6b6f77;margin:0 0 20px;line-height:1.5">Autorisation de transmission à l'assureur.</p>
-          <label style="display:flex;gap:12px;align-items:flex-start;background:#fbfaf7;border:1.6px solid #eae7df;border-radius:13px;padding:14px;margin-bottom:12px;font-weight:400;font-family:'Nunito Sans',sans-serif;font-size:14.5px;color:#3a3e45;cursor:pointer;line-height:1.5"><input type="checkbox" name="consentAssurance" checked="{{ f.consentAssurance }}" onChange="{{ onCheck }}"><span>J'autorise Groupe WT Corporation à transmettre à son assureur mes renseignements de permis, mon dossier de conduite et mes certifications aux fins de l'évaluation du risque, et je confirme que ces informations sont exactes.</span></label>
-          <sc-if value="{{ e.consentAssurance }}" hint-placeholder-val=""><p style="margin:4px 0 0;font-size:13px;color:#c0392b">{{ e.consentAssurance }}</p></sc-if>
+          <sc-if value="{{ assurReq }}" hint-placeholder-val="{{ true }}"><label style="display:flex;gap:12px;align-items:flex-start;background:#fbfaf7;border:1.6px solid #eae7df;border-radius:13px;padding:14px;margin-bottom:12px;font-weight:400;font-family:'Nunito Sans',sans-serif;font-size:14.5px;color:#3a3e45;cursor:pointer;line-height:1.5"><input type="checkbox" name="consentAssurance" checked="{{ f.consentAssurance }}" onChange="{{ onCheck }}"><span>J'autorise Groupe WT Corporation à transmettre à son assureur mes renseignements de permis, mon dossier de conduite et mes certifications aux fins de l'évaluation du risque, et je confirme que ces informations sont exactes.</span></label>
+          <sc-if value="{{ e.consentAssurance }}" hint-placeholder-val=""><p style="margin:4px 0 0;font-size:13px;color:#c0392b">{{ e.consentAssurance }}</p></sc-if></sc-if>
 
           <div style="background:#f4f7fb;border:1px solid #d9e2ef;border-radius:13px;padding:14px 16px;margin:16px 0 12px">
             <p style="margin:0;font-size:13.5px;color:#4a5568;line-height:1.55">🔒 Les renseignements fournis dans ce formulaire sont transmis au département RH de WT Corporation et seront utilisés uniquement pour le traitement de votre dossier d'embauche. Les documents transmis seront sauvegardés dans l'environnement Google Workspace sécurisé de l'entreprise.</p>
@@ -203,14 +205,14 @@
           <div style="margin-top:26px;background:#f0f1f4;border:1px solid #d7dae1;border-radius:16px;padding:18px">
             <div style="display:flex;align-items:center;gap:9px;margin-bottom:12px">
               <span style="font-size:15px;line-height:1">🔧</span>
-              <span style="font-family:'Figtree',sans-serif;font-weight:700;font-size:13px;color:#4a4f57;text-transform:uppercase;letter-spacing:.4px">Réservé aux RH — approbation de l'assureur</span>
+              <span style="font-family:'Figtree',sans-serif;font-weight:700;font-size:13px;color:#4a4f57;text-transform:uppercase;letter-spacing:.4px">Prochaine étape</span>
             </div>
-            <label style="display:flex;gap:12px;align-items:flex-start;background:#fff;border:1.6px solid #dfe2e8;border-radius:12px;padding:14px;margin:0 0 12px;font-weight:400;font-family:'Nunito Sans',sans-serif;font-size:14.5px;color:#3a3e45;cursor:pointer;line-height:1.5"><input type="checkbox" checked="{{ assureurApprouve }}" onChange="{{ onApprouve }}"><span>L'assureur a <strong>approuvé</strong> ce conducteur — débloquer le dossier employé (Partie 2).</span></label>
-            <sc-if value="{{ assureurApprouve }}" hint-placeholder-val="">
+            <sc-if value="{{ canContinue }}" hint-placeholder-val="">
               <a href="dossier-employe.html" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:15px 20px;font-family:'Figtree',sans-serif;font-weight:700;font-size:15.5px;color:#fff;background:#2f7d55;border:none;border-radius:13px;cursor:pointer;text-decoration:none;box-sizing:border-box">Continuer vers le dossier employé <span style="font-size:18px">→</span></a>
             </sc-if>
-            <sc-if value="{{ notApprouve }}" hint-placeholder-val="{{ true }}">
-              <p style="margin:0;font-size:13.5px;color:#8b8880;line-height:1.5">En attente de l'approbation de l'assureur. Cochez la case ci-dessus une fois l'approbation reçue pour ouvrir la Partie 2.</p>
+            <sc-if value="{{ waitApproval }}" hint-placeholder-val="{{ true }}">
+              <p style="margin:0 0 12px;font-size:13.5px;color:#8b8880;line-height:1.5">En attente de l'approbation de l'assureur par la RH. Revenez à tout moment via votre lien, ou vérifiez maintenant :</p>
+              <button type="button" onClick="{{ checkApproval }}" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:13px 18px;font-family:'Figtree',sans-serif;font-weight:700;font-size:14.5px;color:#2a5db0;background:#fff;border:1.6px solid #c3d3ec;border-radius:12px;cursor:pointer">↻ Vérifier l'approbation</button>
             </sc-if>
           </div>
           <p style="text-align:center;margin:18px 0 0"><button type="button" onClick="{{ goHome }}" style="border:none;background:none;color:#8b8880;font-family:'Figtree',sans-serif;font-size:13.5px;font-weight:700;text-decoration:underline;cursor:pointer;padding:0;width:auto">Retour à l'accueil</button></p>
@@ -239,6 +241,7 @@ class Component extends DCLogic {
   constructor(props){
     super(props);
     const saved = this.load();
+    this.assurReq = this.computeAssurReq(saved);
     this.state = {
       step: (typeof saved.step === 'number') ? saved.step : 0,
       f: Object.assign(this.emptyForm(), saved.f || {}),
@@ -265,7 +268,7 @@ class Component extends DCLogic {
   }
 
   load(){ try { return JSON.parse(localStorage.getItem('wt_assurance_v1')||'{}'); } catch(e){ return {}; } }
-  save(){ try { localStorage.setItem('wt_assurance_v1', JSON.stringify({step:this.state.step, f:this.state.f, signature:this.state.signature, assureurApprouve:this.state.assureurApprouve})); } catch(e){} }
+  save(){ try { localStorage.setItem('wt_assurance_v1', JSON.stringify({step:this.state.step, f:this.state.f, signature:this.state.signature, assureurApprouve:this.state.assureurApprouve, assuranceRequise:this.assurReq})); } catch(e){} }
 
   componentDidUpdate(){
     this.save();
@@ -368,6 +371,25 @@ class Component extends DCLogic {
     this.setState({ signature: null });
   };
 
+  // Assurance requise ? via ?assurance=0 (URL) ou drapeau semé depuis l'invitation.
+  computeAssurReq(saved){
+    try { const u = new URLSearchParams(location.search).get('assurance'); if (u==='0'||u==='non'||u==='false') return false; } catch(e){}
+    if (saved && saved.assuranceRequise === false) return false;
+    return true;
+  }
+  // Vérifie côté serveur si la RH a approuvé l'assureur (débloque la Partie 2).
+  checkApproval = () => {
+    const url = (window.WT_CONFIG && window.WT_CONFIG.SCRIPT_URL) || '';
+    const token = (function(){ try { return localStorage.getItem('wt_token')||''; } catch(e){ return ''; } })();
+    if (!url || !token) return;
+    this.setState({ checkingApproval:true });
+    fetch(url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({action:'lookupToken', token:token})})
+      .then(r=>r.json())
+      .then(res=>{ this.setState({ assureurApprouve: !!(res && res.assureurApprouve), checkingApproval:false }); })
+      .catch(()=>{ this.setState({ checkingApproval:false }); });
+  };
+  componentDidMount(){ if (this.state.sendState==='sent' && this.assurReq) this.checkApproval(); }
+
   requiredFor(step){
     const R = {
       1: [['prenom','Prénom'],['nom','Nom'],['dateNaissance','Date de naissance'],['adresse','Adresse'],['ville','Ville'],['province','Province'],['codePostal','Code postal'],['telephone','Téléphone'],['courriel','Courriel']],
@@ -386,7 +408,7 @@ class Component extends DCLogic {
     }
     if (step === 1 && this.state.f.courriel && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(this.state.f.courriel)) errs.courriel = 'Adresse courriel invalide.';
     if (step === 5){
-      if (!this.state.f.consentAssurance) errs.consentAssurance = 'Veuillez autoriser la transmission à l\u2019assureur pour continuer.';
+      if (this.assurReq && !this.state.f.consentAssurance) errs.consentAssurance = 'Veuillez autoriser la transmission à l\u2019assureur pour continuer.';
       if (!this.state.f.consentGlobal) errs.consentGlobal = 'Veuillez confirmer l\u2019exactitude des renseignements et autoriser leur utilisation.';
       if (!this.state.signature) errs.signature = 'Votre signature est requise.';
     }
@@ -539,6 +561,12 @@ class Component extends DCLogic {
       dateSignature: this.dateSignature(),
       assureurApprouve: !!this.state.assureurApprouve,
       notApprouve: !this.state.assureurApprouve,
+      assurReq: this.assurReq,
+      assurOff: !this.assurReq,
+      checkingApproval: !!this.state.checkingApproval,
+      checkApproval: this.checkApproval,
+      canContinue: (!this.assurReq) || !!this.state.assureurApprouve,
+      waitApproval: this.assurReq && !this.state.assureurApprouve,
       isSending: this.state.sendState === 'sending',
       isSent: this.state.sendState === 'sent',
       isSendError: this.state.sendState === 'error',

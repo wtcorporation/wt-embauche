@@ -55,7 +55,8 @@ const COLONNES_INVITATIONS = [
   "ID invitation", "Token", "Date création", "Créé par", "Prénom", "Nom",
   "Courriel", "Téléphone", "Compagnie", "Poste", "Date entrée prévue",
   "Gestionnaire", "Statut", "% complétion", "Dernière activité",
-  "Lien formulaire", "Lien dossier Drive", "Notes internes"
+  "Lien formulaire", "Lien dossier Drive", "Notes internes",
+  "Assurance requise", "Assurance approuvée"
 ];
 const COLONNES_JOURNAL = ["Date/heure", "ID invitation", "Action", "Détail", "Utilisateur ou système"];
 
@@ -634,7 +635,9 @@ function invitationToObject_(v) {
     id: dcStr_(v[0]), token: dcStr_(v[1]), dateCreation: dcStr_(v[2]), creePar: dcStr_(v[3]), prenom: dcStr_(v[4]), nom: dcStr_(v[5]),
     courriel: dcStr_(v[6]), telephone: dcStr_(v[7]), compagnie: dcStr_(v[8]), poste: dcStr_(v[9]), dateEntree: dcStr_(v[10]),
     gestionnaire: dcStr_(v[11]), statut: dcStr_(v[12]), completion: dcStr_(v[13]), derniereActivite: dcStr_(v[14]),
-    lienFormulaire: dcStr_(v[15]), lienDrive: dcStr_(v[16]), notes: dcStr_(v[17])
+    lienFormulaire: dcStr_(v[15]), lienDrive: dcStr_(v[16]), notes: dcStr_(v[17]),
+    assuranceRequise: (v[18] === false || v[18] === 'false' || v[18] === 'Non') ? false : true,
+    assureurApprouve: (v[19] === true || v[19] === 'true' || v[19] === 'Oui')
   };
 }
 
@@ -689,7 +692,9 @@ function rhCreateInvitation(payload) {
 
   var invitationId = nextInvitationId_();
   var token = generateToken_(invitationId);
-  var lienForm = buildFormLink_(token);
+  var assuranceRequise = (payload.assuranceRequise === false) ? false : true;
+  // Sans assurance : le lien saute la partie assureur (?assurance=0).
+  var lienForm = buildFormLink_(token) + (assuranceRequise ? "" : "&assurance=0");
 
   // Création immédiate du dossier Drive (préférence RH), sans doublon.
   var folder = getOrCreateEmployeeFolder(nom, prenom);
@@ -700,7 +705,8 @@ function rhCreateInvitation(payload) {
     String(payload.courriel || ""), String(payload.telephone || ""),
     String(payload.compagnie || ""), String(payload.poste || ""),
     String(payload.dateEntree || ""), String(payload.gestionnaire || ""),
-    statut, "0 %", new Date(), lienForm, folder.getUrl(), String(payload.notes || "")
+    statut, "0 %", new Date(), lienForm, folder.getUrl(), String(payload.notes || ""),
+    assuranceRequise, false
   ]);
   logActivite_(invitationId, "Invitation créée", prenom + " " + nom + " — " + (payload.poste || ""), user);
 
@@ -800,6 +806,8 @@ function lookupToken_(data) {
   // On ne renvoie QUE le préremplissage — jamais les notes internes ni les autres dossiers.
   return {
     ok: true,
+    assuranceRequise: rec.assuranceRequise,
+    assureurApprouve: rec.assureurApprouve,
     prefill: {
       prenom: rec.prenom, nom: rec.nom, courriel: rec.courriel,
       telephone: rec.telephone, compagnie: rec.compagnie, poste: rec.poste,
@@ -908,6 +916,17 @@ function rhValidate(token, decision, commentaire) {
   if (commentaire) rhAddNote(token, "[Validation] " + statut + " — " + commentaire);
   logActivite_(found.values[0], "Dossier validé (RH)", statut + (commentaire ? (" — " + commentaire) : ""), user);
   return { ok: true, statut: statut };
+}
+
+/** RH — approuve l'assureur : débloque la Partie 2 côté employé. */
+function rhApproveInsurance(token) {
+  var user = requireRH_();
+  var found = invitationRowByToken_(token);
+  if (!found) return { ok: false, error: "Invitation introuvable." };
+  setInvitationField_(token, "Assurance approuvée", true);
+  setInvitationField_(token, "Dernière activité", new Date());
+  logActivite_(found.values[0], "Assureur approuvé (RH)", "Partie 2 débloquée", user);
+  return { ok: true };
 }
 
 /** Récapitulatif PDF (texte, fiable) déposé dans le dossier Drive de l'employé. */

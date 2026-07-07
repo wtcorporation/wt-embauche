@@ -65,7 +65,7 @@
           var cur = JSON.parse(ls('wt_assurance_v1')||'null');
           var started = cur && cur.f && (cur.f.prenom || cur.f.nom);
           if(!started){
-            lss('wt_assurance_v1', JSON.stringify({ step:0, f:{
+            lss('wt_assurance_v1', JSON.stringify({ step:0, assuranceRequise:(res.assuranceRequise===false?false:true), f:{
               prenom:p.prenom||'', nom:p.nom||'', courriel:p.courriel||'',
               telephone:p.telephone||'', compagnie:p.compagnie||'', poste:p.poste||'',
               dateEntree:p.dateEntree||'', gestionnaire:p.gestionnaire||''
