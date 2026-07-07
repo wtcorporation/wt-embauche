@@ -510,6 +510,7 @@
             (d.assureurApprouve
               ? ('<div style="margin-top:8px"><span class="tag green">Assureur approuvé ✓ (Partie 2 débloquée)</span>'+
                   (d.compagniesAssurees?('<div style="margin-top:8px;font-size:13px"><b>Compagnies assurées :</b> '+esc(d.compagniesAssurees)+'</div>'):'')+
+                  '<div style="margin-top:10px"><button class="btn sm" onclick="sendPart2(\''+esc(d.token)+'\')">📨 Renvoyer le lien Partie 2 à l\'employé</button></div>'+
                  '</div>')
               : ('<div style="margin-top:10px"><div style="font-size:12.5px;color:#5c626b;margin-bottom:6px">Approuvé par l\'assureur pour :</div>'+
                  '<div class="docs" id="assurCos">'+
@@ -570,8 +571,12 @@
     var cos=[]; document.querySelectorAll('#assurCos input:checked').forEach(function(c){ cos.push(c.value); });
     if(!cos.length){ if(!confirm("Aucune compagnie cochée. Approuver quand même ?")) return; }
     else if(!confirm("Confirmer l'approbation de l'assureur pour : "+cos.join(', ')+" ? La Partie 2 sera débloquée.")) return;
-    google.script.run.withSuccessHandler(function(res){ if(res&&res.ok){ alert('Assureur approuvé — la Partie 2 est débloquée pour l\'employé.'); openDetail(token); } else alert((res&&res.error)||'Échec.'); })
+    google.script.run.withSuccessHandler(function(res){ if(res&&res.ok){ alert('Assureur approuvé — '+(res.courrielEnvoye?'un courriel avec le lien de la Partie 2 a été envoyé à l\'employé.':'la Partie 2 est débloquée (aucun courriel : l\'employé n\'a pas d\'adresse enregistrée).')); openDetail(token); } else alert((res&&res.error)||'Échec.'); })
       .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); }).rhApproveInsurance(token, cos.join(', '));
+  }
+  function sendPart2(token){
+    google.script.run.withSuccessHandler(function(res){ alert(res&&res.ok?'Courriel « Partie 2 » envoyé à l\'employé.':((res&&res.error)||'Échec.')); })
+      .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); }).rhSendPart2Link(token);
   }
 
   function copyText(txt, btn){

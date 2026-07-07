@@ -281,6 +281,30 @@ class Component extends DCLogic {
     this.save();
   }
 
+  // Permet d'atteindre la Partie 2 directement (lien du courriel d'approbation), même sur un
+  // autre appareil : lit ?token= dans l'URL, le mémorise, et récupère l'identité côté serveur
+  // si la Partie 1 n'a pas été remplie sur cet appareil (sinon la soumission échouerait).
+  componentDidMount(){
+    const self = this;
+    let token = '';
+    try { token = new URLSearchParams(location.search).get('token') || ''; } catch(e){}
+    if (token) { try { localStorage.setItem('wt_token', token); } catch(e){} }
+    const a = (this.assurance && this.assurance.f) || {};
+    if (a.prenom || a.nom) return; // identité déjà présente (même appareil) — rien à faire
+    const tok = token || (function(){ try { return localStorage.getItem('wt_token')||''; } catch(e){ return ''; } })();
+    const url = (window.WT_CONFIG && window.WT_CONFIG.SCRIPT_URL) || this.props.googleScriptUrl;
+    if (!tok || !url) return;
+    fetch(url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'lookupToken', token: tok})})
+      .then(function(r){ return r.json(); })
+      .then(function(res){
+        if (!res || !res.ok || !res.prefill) return;
+        const p = res.prefill;
+        self.assurance = { f: { prenom:p.prenom||'', nom:p.nom||'', courriel:p.courriel||'', telephone:p.telephone||'', compagnie:p.compagnie||'', poste:p.poste||'' } };
+        self.setState(function(s){ return { f: Object.assign({}, s.f, { courrielPaie: s.f.courrielPaie || p.courriel || '' }) }; });
+      })
+      .catch(function(){});
+  }
+
   scrollTop(){ try { window.scrollTo({top:0,behavior:'smooth'}); } catch(e){ window.scrollTo(0,0); } }
 
   onField = (e) => {

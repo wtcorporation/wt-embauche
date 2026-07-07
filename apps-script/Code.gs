@@ -746,6 +746,30 @@ function sendInvitationEmail_(rec, isRelance, manquants) {
   MailApp.sendEmail({ to: rec.courriel, subject: sujet, htmlBody: html });
 }
 
+/** Lien direct vers la Partie 2 (dossier employé) avec token — fonctionne sur n'importe quel appareil. */
+function buildPart2Link_(token) {
+  var base = PUBLIC_FORM_BASE_URL;
+  if (base.charAt(base.length - 1) !== "/") base += "/";
+  return base + "dossier-employe.html?token=" + encodeURIComponent(token);
+}
+
+/** Courriel envoyé à l'employé quand l'assureur est approuvé : l'invite à compléter la Partie 2. */
+function sendPart2InvitationEmail_(rec) {
+  if (!rec || !rec.courriel) return false;
+  var lien = buildPart2Link_(rec.token);
+  var prenom = rec.prenom || "";
+  var html =
+    "<div style='font-family:Arial;font-size:14px;color:#22252b;line-height:1.6'>" +
+    "<p>Bonjour " + prenom + ",</p>" +
+    "<p>Bonne nouvelle : votre dossier a été <b>approuvé par l'assureur</b>. Vous pouvez maintenant compléter la <b>Partie 2 — Dossier employé</b> (paie, contact d'urgence, documents).</p>" +
+    "<p style='margin:18px 0'><a href='" + lien + "' style='background:#2f7d55;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:bold'>Compléter la Partie 2</a></p>" +
+    "<p style='font-size:12px;color:#666;word-break:break-all'>Ou copiez ce lien : " + lien + "</p>" +
+    "<p>Merci de compléter cette étape dès que possible.</p>" +
+    "<p>L'équipe RH<br>Groupe WT Corporation</p></div>";
+  MailApp.sendEmail({ to: rec.courriel, subject: "Votre dossier est approuvé — complétez la Partie 2 · Groupe WT Corporation", htmlBody: html });
+  return true;
+}
+
 /** RH — crée une invitation : token + ligne Sheets + dossier Drive + (courriel). */
 function rhCreateInvitation(payload) {
   var user = requireRH_();
@@ -1033,7 +1057,27 @@ function rhApproveInsurance(token, compagnies) {
   setInvitationField_(token, "Dernière activité", new Date());
   logActivite_(found.values[0], "Assureur approuvé (RH)", "Compagnies : " + (compagnies || "—"), user);
   updateEmployeeStatut_(token);
-  return { ok: true };
+  // Notifie l'employé avec un lien DIRECT vers la Partie 2 (fonctionne sur n'importe quel appareil).
+  var rec = invitationToObject_(found.values);
+  var courrielEnvoye = false;
+  try {
+    courrielEnvoye = sendPart2InvitationEmail_(rec);
+    if (courrielEnvoye) logActivite_(rec.id, "Courriel Partie 2 envoyé", "à " + rec.courriel, user);
+  } catch (e) { logError_(e, null, "sendPart2InvitationEmail_ (approbation)"); }
+  return { ok: true, courrielEnvoye: courrielEnvoye };
+}
+
+/** RH — (re)envoie à l'employé le lien de la Partie 2 (dossier employé). */
+function rhSendPart2Link(token) {
+  var user = requireRH_();
+  var found = invitationRowByToken_(token);
+  if (!found) return { ok: false, error: "Invitation introuvable." };
+  var rec = invitationToObject_(found.values);
+  if (!rec.courriel) return { ok: false, error: "Aucun courriel n'est enregistré pour cet employé." };
+  var envoye = sendPart2InvitationEmail_(rec);
+  setInvitationField_(token, "Dernière activité", new Date());
+  logActivite_(rec.id, "Lien Partie 2 renvoyé", "à " + rec.courriel, user);
+  return { ok: envoye, courriel: rec.courriel };
 }
 
 /** Récapitulatif PDF (texte, fiable) déposé dans le dossier Drive de l'employé. */
