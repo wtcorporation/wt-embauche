@@ -1191,6 +1191,8 @@ function setupCompanySheet_(name) {
   fields.forEach(function (f) {
     fiche.getRange("B" + fr).setValue(f[0]).setFontWeight("bold").setFontColor("#3a3e45").setBackground("#f4f1ea");
     fiche.getRange("C" + fr).setFormula("=IFERROR(INDEX('" + SHEET_EMPLOYES + "'!" + f[1] + ":" + f[1] + ", MATCH($C$5, '" + SHEET_EMPLOYES + "'!B:B, 0)), \"\")");
+    // Colonnes de date (I=naissance, P=entrée, V=expiration permis) : format date.
+    if (f[1] === "I" || f[1] === "P" || f[1] === "V") fiche.getRange("C" + fr).setNumberFormat("yyyy-mm-dd");
     fr++;
   });
   fiche.setColumnWidth(1, 20); fiche.setColumnWidth(2, 190); fiche.setColumnWidth(3, 430);
