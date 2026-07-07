@@ -156,7 +156,8 @@
   <section class="card">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
       <h2 style="margin:0">Dossiers d'embauche</h2>
-      <button class="btn sm sec" onclick="loadList()" style="margin-left:auto">↻ Actualiser</button>
+      <button class="btn sm sec" onclick="setupSheets()" style="margin-left:auto">⚙️ Configurer feuilles compagnies</button>
+      <button class="btn sm sec" onclick="loadList()">↻ Actualiser</button>
     </div>
     <div class="toolbar">
       <input id="search" type="search" placeholder="🔍 Rechercher (nom, courriel…)" oninput="renderList()">
@@ -266,6 +267,13 @@
   }
 
   // -------- Liste + filtres/tri --------
+  function setupSheets(){
+    if(!confirm("(Re)configurer les onglets « Dashboard » + « Fiche employé » dans les feuilles des 5 compagnies ?")) return;
+    google.script.run
+      .withSuccessHandler(function(res){ if(res&&res.ok){ alert('Onglets configurés : '+(res.compagnies||[]).join(', ')+((res.erreurs&&res.erreurs.length)?('\n\nErreurs :\n'+res.erreurs.join('\n')):'')); } else alert((res&&res.error)||'Échec.'); })
+      .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); })
+      .rhSetupCompanySheets();
+  }
   function loadList(){
     document.getElementById('listMsg').style.display='block';
     document.getElementById('listMsg').textContent='Chargement…';

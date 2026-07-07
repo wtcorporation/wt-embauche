@@ -122,6 +122,18 @@ const DOCS_REQUIS_PAR_POSTE = {
 };
 const DOCS_REQUIS_DEFAUT = ["Permis recto", "Permis verso", "Specimen cheque"];
 
+// Onglet consolidé « Employés » (1 ligne par employé) dans chaque feuille de
+// compagnie. Alimenté par upsertEmployee_ à chaque soumission (clé = token).
+const SHEET_EMPLOYES = "Employés";
+const EMP_COLONNES = [
+  "Token", "Nom complet", "Date de mise à jour", "Statut", "Nom", "Prénom",
+  "Courriel", "Téléphone", "Date de naissance", "Adresse", "Ville", "Province", "Code postal",
+  "Compagnie", "Poste", "Date d'entrée", "Type d'emploi", "Département", "Gestionnaire",
+  "N° permis", "Classe permis", "Expiration permis", "WreckMaster",
+  "Contact urgence (nom)", "Lien urgence", "Tél. urgence",
+  "NAS fourni", "Spécimen chèque fourni", "Documents signés", "Lien dossier Drive"
+];
+
 // Fiche d'embauche officielle (remplie par RH une fois le dossier accepté).
 // ⚠️ Onglet à ACCÈS RESTREINT : contient rémunération et identifiants. On n'y
 // stocke qu'un mot de passe TEMPORAIRE (à changer à la 1re connexion).
@@ -194,6 +206,8 @@ function handleSubmit_(data, e) {
   }
   // Récapitulatif PDF déposé dans le dossier Drive (toutes soumissions).
   try { generateRecapPdf_(folder, data, employeeName); } catch (e3) { logError_(e3, e, "generateRecapPdf_"); }
+  // Tableau consolidé « Employés » de la compagnie (1 ligne par employé).
+  try { upsertEmployee_(data, folder, compagnie); } catch (e4) { logError_(e4, e, "upsertEmployee_"); }
 
   return { ok: true, submissionId: submissionId, employeeFolderUrl: folder.getUrl() };
 }
@@ -1035,6 +1049,123 @@ function rhSaveFiche(token, data) {
   else sheet.appendRow(row);
   logActivite_(idInv, "Fiche d'embauche mise à jour", "", user);
   return { ok: true };
+}
+
+// ============ TABLEAU CONSOLIDÉ « EMPLOYÉS » + DASHBOARD + FICHE ============
+
+function empSheetForCompany_(name) {
+  return getOrCreateSheet_(companySpreadsheet_(name), SHEET_EMPLOYES, EMP_COLONNES);
+}
+
+/** Insère ou met à jour la ligne employé (clé = token, sinon Nom|Prénom). */
+function upsertEmployee_(data, folder, compagnie) {
+  var token = String(data.token || "");
+  var nom = String(data.nom || "").trim();
+  var prenom = String(data.prenom || "").trim();
+  if (!token && !nom && !prenom) return;
+  var sheet = empSheetForCompany_(compagnie);
+  var vals = sheet.getDataRange().getValues();
+
+  var rowIdx = -1;
+  for (var r = 1; r < vals.length; r++) {
+    if (token && String(vals[r][0]) === token) { rowIdx = r; break; }
+    if (!token && (String(vals[r][4]).trim() + "|" + String(vals[r][5]).trim()) === (nom + "|" + prenom)) { rowIdx = r; break; }
+  }
+
+  var d = data.data || {};
+  var fichiers = data.fichiers || [];
+  var hasCat = function (c) { return fichiers.some(function (f) { return f.categorie === c; }); };
+  var docsSignes = "";
+  if (data.type === "documents" && data.documents) {
+    var s = data.documents.filter(function (x) { return x.signe === "Oui"; }).length;
+    docsSignes = s + "/" + data.documents.length;
+  }
+  var upd = {};
+  var set = function (i, v) { if (v !== undefined && v !== null && String(v) !== "") upd[i] = v; };
+  set(0, token); set(1, (prenom + " " + nom).trim()); set(2, new Date());
+  set(3, TYPES_FORMULAIRE[data.type] || data.type);
+  set(4, nom); set(5, prenom); set(6, data.courriel); set(7, data.telephone);
+  set(8, d.dateNaissance); set(9, d.adresse); set(10, d.ville); set(11, d.province); set(12, d.codePostal);
+  set(13, data.compagnie || d.entreprise || compagnie); set(14, data.poste || d.poste); set(15, d.dateEntree); set(16, d.typeEmploi); set(17, d.departement);
+  set(18, d.gestionnaire);
+  set(19, d.permisNumero); set(20, d.permisClasse); set(21, d.permisExpiration); set(22, d.wreckmaster);
+  set(23, d.urgenceNom); set(24, d.urgenceLien); set(25, d.urgenceTel);
+  set(26, d.nasFourni);
+  if (hasCat("Specimen cheque")) set(27, "Oui");
+  set(28, docsSignes);
+  if (folder && folder.getUrl) set(29, folder.getUrl());
+
+  if (rowIdx < 0) {
+    var row = [];
+    for (var i = 0; i < EMP_COLONNES.length; i++) row[i] = (upd[i] !== undefined ? upd[i] : "");
+    sheet.appendRow(row);
+  } else {
+    var existing = vals[rowIdx].slice(0, EMP_COLONNES.length);
+    while (existing.length < EMP_COLONNES.length) existing.push("");
+    for (var k in upd) existing[parseInt(k, 10)] = upd[k];
+    sheet.getRange(rowIdx + 1, 1, 1, EMP_COLONNES.length).setValues([existing]);
+  }
+}
+
+/** Construit/rafraîchit les onglets Dashboard + Fiche employé d'une compagnie. */
+function setupCompanySheet_(name) {
+  var ss = companySpreadsheet_(name);
+  var emp = getOrCreateSheet_(ss, SHEET_EMPLOYES, EMP_COLONNES);
+  emp.setFrozenRows(1);
+  emp.getRange(1, 1, 1, EMP_COLONNES.length).setFontWeight("bold").setBackground("#f4f1ea");
+
+  // ---------- Dashboard ----------
+  var dash = ss.getSheetByName("Dashboard") || ss.insertSheet("Dashboard", 0);
+  dash.clear();
+  dash.getRange("B2").setValue("TABLEAU DE BORD — " + name).setFontSize(16).setFontWeight("bold");
+  dash.getRange("B4").setValue("Total employés").setFontWeight("bold");
+  dash.getRange("C4").setFormula("=COUNTIF('" + SHEET_EMPLOYES + "'!B2:B,\"?*\")");
+  dash.getRange("B6").setValue("Répartition par statut").setFontWeight("bold");
+  var row = 7;
+  STATUTS.forEach(function (s) {
+    dash.getRange("B" + row).setValue(s);
+    dash.getRange("C" + row).setFormula("=COUNTIF('" + SHEET_EMPLOYES + "'!D:D,\"" + s + "\")");
+    row++;
+  });
+  dash.setColumnWidth(1, 20); dash.setColumnWidth(2, 260); dash.setColumnWidth(3, 90);
+
+  // ---------- Fiche employé ----------
+  var fiche = ss.getSheetByName("Fiche employé") || ss.insertSheet("Fiche employé", 1);
+  fiche.clear();
+  fiche.getRange("B2").setValue("FICHE EMPLOYÉ").setFontSize(18).setFontWeight("bold");
+  fiche.getRange("B3").setValue(name).setFontColor("#6b6f77");
+  fiche.getRange("B5").setValue("Employé :").setFontWeight("bold");
+  var sel = fiche.getRange("C5");
+  var rule = SpreadsheetApp.newDataValidation().requireValueInRange(emp.getRange("B2:B"), true).setAllowInvalid(true).build();
+  sel.setDataValidation(rule); sel.setBackground("#fff3e9").setFontWeight("bold");
+  var fields = [
+    ["Statut", "D"], ["Nom", "E"], ["Prénom", "F"], ["Courriel", "G"], ["Téléphone", "H"],
+    ["Date de naissance", "I"], ["Adresse", "J"], ["Ville", "K"], ["Province", "L"], ["Code postal", "M"],
+    ["Compagnie", "N"], ["Poste", "O"], ["Date d'entrée", "P"], ["Type d'emploi", "Q"], ["Département", "R"], ["Gestionnaire", "S"],
+    ["N° permis", "T"], ["Classe permis", "U"], ["Expiration permis", "V"], ["WreckMaster", "W"],
+    ["Contact urgence", "X"], ["Lien contact", "Y"], ["Tél. urgence", "Z"],
+    ["NAS fourni", "AA"], ["Spécimen chèque", "AB"], ["Documents signés", "AC"], ["Dossier Drive", "AD"]
+  ];
+  var fr = 7;
+  fields.forEach(function (f) {
+    fiche.getRange("B" + fr).setValue(f[0]).setFontWeight("bold").setFontColor("#3a3e45").setBackground("#f4f1ea");
+    fiche.getRange("C" + fr).setFormula("=IFERROR(INDEX('" + SHEET_EMPLOYES + "'!" + f[1] + ":" + f[1] + ", MATCH($C$5, '" + SHEET_EMPLOYES + "'!B:B, 0)), \"\")");
+    fr++;
+  });
+  fiche.setColumnWidth(1, 20); fiche.setColumnWidth(2, 190); fiche.setColumnWidth(3, 430);
+  fiche.setFrozenRows(5);
+  return true;
+}
+
+/** RH — (re)configure les onglets Dashboard + Fiche pour toutes les compagnies. */
+function rhSetupCompanySheets() {
+  var user = requireRH_();
+  var done = [], erreurs = [];
+  Object.keys(COMPANIES).forEach(function (name) {
+    try { setupCompanySheet_(name); done.push(name); }
+    catch (e) { erreurs.push(name + " : " + (e && e.message ? e.message : e)); logError_(e, null, "setupCompanySheet_ " + name); }
+  });
+  return { ok: true, compagnies: done, erreurs: erreurs };
 }
 
 // ============================== TEST MANUEL ==============================
