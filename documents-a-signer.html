@@ -357,7 +357,7 @@ class Component extends DCLogic {
       adresse: af.adresse||'', ville: af.ville||'', codePostal: af.codePostal||'', dateNaissance: af.dateNaissance||'',
       poste: af.poste||'', entreprise: (af.compagnie==='Autre'?af.compagnieAutre:af.compagnie)||'', departement: (af.departement==='Autre'?af.departementAutre:af.departement)||'',
       permisNumero: af.permisNumero||'', permisClasse: (af.permisClasse==='Autre'?af.permisClasseAutre:af.permisClasse)||'', permisExpiration: af.permisExpiration||'',
-      nomGestionnaire:'', posteGestionnaire:'',
+      nomGestionnaire: af.gestionnaire||'', posteGestionnaire:'',
       nomConducteur: nomComplet,
       uNomEmploye: nomComplet, uPoste: af.poste||'', uTel: af.telephone||'',
       u1Nom: df.urgenceNom||'', u1Rel: df.urgenceLien||'', u1Tel: df.urgenceTel||'', u1Adr:'',

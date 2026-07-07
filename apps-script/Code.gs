@@ -802,7 +802,8 @@ function lookupToken_(data) {
     ok: true,
     prefill: {
       prenom: rec.prenom, nom: rec.nom, courriel: rec.courriel,
-      telephone: rec.telephone, compagnie: rec.compagnie, poste: rec.poste
+      telephone: rec.telephone, compagnie: rec.compagnie, poste: rec.poste,
+      dateEntree: rec.dateEntree, gestionnaire: rec.gestionnaire
     }
   };
 }

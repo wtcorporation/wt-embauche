@@ -67,7 +67,8 @@
           if(!started){
             lss('wt_assurance_v1', JSON.stringify({ step:0, f:{
               prenom:p.prenom||'', nom:p.nom||'', courriel:p.courriel||'',
-              telephone:p.telephone||'', compagnie:p.compagnie||'', poste:p.poste||''
+              telephone:p.telephone||'', compagnie:p.compagnie||'', poste:p.poste||'',
+              dateEntree:p.dateEntree||'', gestionnaire:p.gestionnaire||''
             }}));
           }
         } catch(e){}
