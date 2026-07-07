@@ -375,7 +375,7 @@
     if (d.statut === 'Dossier accepté') {
       ficheHtml =
         '<h3 style="margin:22px 0 6px">Fiche d\'embauche officielle (interne)</h3>'+
-        '<div class="grid">'+ fld('fSalaire','Salaire',fiche.salaire)+ fld('fVacances','Vacances (%)',fiche.vacances)+ fld('fCourriel','Courriel de compagnie',fiche.courrielCompagnie)+ fld('fUser','Nom d\'utilisateur',fiche.utilisateur)+ fld('fPass','Mot de passe temporaire',fiche.motDePasseTemp)+ fld('fFuel','Code fuel',fiche.codeFuel)+ '</div>'+
+        '<div class="grid">'+ fld('fSalaire','Salaire',fiche.salaire)+ fld('fVacances','Vacances (%)',fiche.vacances)+ fld('fPrime','Prime ($) — s\'il y a lieu',fiche.prime)+ fld('fCourriel','Courriel de compagnie',fiche.courrielCompagnie)+ fld('fUser','Nom d\'utilisateur',fiche.utilisateur)+ fld('fPass','Mot de passe temporaire',fiche.motDePasseTemp)+ fld('fFuel','Code fuel',fiche.codeFuel)+ '</div>'+
         '<div style="'+lab+'">Cellulaire fourni</div>'+
         '<div class="grid">'+ fld('fCellNum','Numéro',fiche.cellNumero)+ fld('fCellMarque','Marque',fiche.cellMarque)+ fld('fCellModele','Modèle',fiche.cellModele)+ fld('fCellSerie','N° de série',fiche.cellSerie)+ '</div>'+
         '<div style="'+lab+'">Portable fourni</div>'+
@@ -400,7 +400,6 @@
             (d.assureurApprouve
               ? ('<div style="margin-top:8px"><span class="tag green">Assureur approuvé ✓ (Partie 2 débloquée)</span>'+
                   (d.compagniesAssurees?('<div style="margin-top:8px;font-size:13px"><b>Compagnies assurées :</b> '+esc(d.compagniesAssurees)+'</div>'):'')+
-                  (d.prime?('<div style="font-size:13px"><b>Prime :</b> '+esc(d.prime)+' $</div>'):'')+
                  '</div>')
               : ('<div style="margin-top:10px"><div style="font-size:12.5px;color:#5c626b;margin-bottom:6px">Approuvé par l\'assureur pour :</div>'+
                  '<div class="docs" id="assurCos">'+
@@ -408,7 +407,6 @@
                    '<label class="chk"><input type="checkbox" value="Livraison Primus"> Livraison Primus</label>'+
                    '<label class="chk"><input type="checkbox" value="Canada inc"> Canada inc</label>'+
                  '</div>'+
-                 '<div style="margin-top:8px;max-width:240px"><label style="font-size:12px">Prime ($) — s\'il y a lieu</label><input id="assurPrime" type="text" placeholder="Ex. 500"></div>'+
                  '<button class="btn sm" style="margin-top:10px" onclick="approveInsurance(\''+esc(d.token)+'\')">✓ Approuver l\'assureur</button>'+
                  '</div>'))+
           '</div>')
@@ -446,18 +444,17 @@
 
   function val(id){ var el=document.getElementById(id); return el?el.value.trim():''; }
   function saveFiche(token){
-    var data={ salaire:val('fSalaire'), vacances:val('fVacances'), courrielCompagnie:val('fCourriel'), utilisateur:val('fUser'), motDePasseTemp:val('fPass'), codeFuel:val('fFuel'), cellNumero:val('fCellNum'), cellMarque:val('fCellMarque'), cellModele:val('fCellModele'), cellSerie:val('fCellSerie'), portMarque:val('fPortMarque'), portModele:val('fPortModele'), portSerie:val('fPortSerie') };
+    var data={ salaire:val('fSalaire'), vacances:val('fVacances'), prime:val('fPrime'), courrielCompagnie:val('fCourriel'), utilisateur:val('fUser'), motDePasseTemp:val('fPass'), codeFuel:val('fFuel'), cellNumero:val('fCellNum'), cellMarque:val('fCellMarque'), cellModele:val('fCellModele'), cellSerie:val('fCellSerie'), portMarque:val('fPortMarque'), portModele:val('fPortModele'), portSerie:val('fPortSerie') };
     var m=document.getElementById('ficheMsg'); if(m) m.textContent='Enregistrement…';
     google.script.run.withSuccessHandler(function(res){ if(m) m.textContent=(res&&res.ok)?'✓ Enregistré':((res&&res.error)||'Échec'); })
       .withFailureHandler(function(e){ if(m) m.textContent=String(e&&e.message?e.message:e); }).rhSaveFiche(token, data);
   }
   function approveInsurance(token){
     var cos=[]; document.querySelectorAll('#assurCos input:checked').forEach(function(c){ cos.push(c.value); });
-    var primeEl=document.getElementById('assurPrime'); var prime=primeEl?primeEl.value.trim():'';
     if(!cos.length){ if(!confirm("Aucune compagnie cochée. Approuver quand même ?")) return; }
-    else if(!confirm("Confirmer l'approbation de l'assureur pour : "+cos.join(', ')+(prime?(' · prime '+prime+' $'):'')+" ? La Partie 2 sera débloquée.")) return;
+    else if(!confirm("Confirmer l'approbation de l'assureur pour : "+cos.join(', ')+" ? La Partie 2 sera débloquée.")) return;
     google.script.run.withSuccessHandler(function(res){ if(res&&res.ok){ alert('Assureur approuvé — la Partie 2 est débloquée pour l\'employé.'); openDetail(token); } else alert((res&&res.error)||'Échec.'); })
-      .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); }).rhApproveInsurance(token, cos.join(', '), prime);
+      .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); }).rhApproveInsurance(token, cos.join(', '));
   }
 
   function copyText(txt, btn){

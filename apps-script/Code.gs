@@ -57,7 +57,7 @@ const COLONNES_INVITATIONS = [
   "Gestionnaire", "Statut", "% complétion", "Dernière activité",
   "Lien formulaire", "Lien dossier Drive", "Notes internes",
   "Assurance requise", "Assurance approuvée",
-  "Compagnies assurées", "Prime ($)"
+  "Compagnies assurées"
 ];
 const COLONNES_JOURNAL = ["Date/heure", "ID invitation", "Action", "Détail", "Utilisateur ou système"];
 
@@ -92,7 +92,7 @@ const DOCS_REQUIS_DEFAUT = ["Permis recto", "Permis verso", "Specimen cheque"];
 // ⚠️ Onglet à ACCÈS RESTREINT : contient rémunération et identifiants. On n'y
 // stocke qu'un mot de passe TEMPORAIRE (à changer à la 1re connexion).
 const SHEET_FICHE = "fiche_embauche";
-const COLONNES_FICHE = ["ID invitation", "Token", "Salaire", "Vacances (%)",
+const COLONNES_FICHE = ["ID invitation", "Token", "Salaire", "Vacances (%)", "Prime ($)",
   "Cellulaire - numéro", "Cellulaire - marque", "Cellulaire - modèle", "Cellulaire - n° série",
   "Portable - marque", "Portable - modèle", "Portable - n° série",
   "Courriel compagnie", "Nom d'utilisateur", "Mot de passe temporaire", "Code fuel",
@@ -639,8 +639,7 @@ function invitationToObject_(v) {
     lienFormulaire: dcStr_(v[15]), lienDrive: dcStr_(v[16]), notes: dcStr_(v[17]),
     assuranceRequise: (v[18] === false || v[18] === 'false' || v[18] === 'Non') ? false : true,
     assureurApprouve: (v[19] === true || v[19] === 'true' || v[19] === 'Oui'),
-    compagniesAssurees: dcStr_(v[20]),
-    prime: dcStr_(v[21])
+    compagniesAssurees: dcStr_(v[20])
   };
 }
 
@@ -709,7 +708,7 @@ function rhCreateInvitation(payload) {
     String(payload.compagnie || ""), String(payload.poste || ""),
     String(payload.dateEntree || ""), String(payload.gestionnaire || ""),
     statut, "0 %", new Date(), lienForm, folder.getUrl(), String(payload.notes || ""),
-    assuranceRequise, false, "", ""
+    assuranceRequise, false, ""
   ]);
   logActivite_(invitationId, "Invitation créée", prenom + " " + nom + " — " + (payload.poste || ""), user);
 
@@ -922,15 +921,14 @@ function rhValidate(token, decision, commentaire) {
 }
 
 /** RH — approuve l'assureur : débloque la Partie 2 côté employé. */
-function rhApproveInsurance(token, compagnies, prime) {
+function rhApproveInsurance(token, compagnies) {
   var user = requireRH_();
   var found = invitationRowByToken_(token);
   if (!found) return { ok: false, error: "Invitation introuvable." };
   setInvitationField_(token, "Assurance approuvée", true);
   if (typeof compagnies !== "undefined" && compagnies !== null) setInvitationField_(token, "Compagnies assurées", String(compagnies));
-  if (typeof prime !== "undefined" && prime !== null) setInvitationField_(token, "Prime ($)", String(prime));
   setInvitationField_(token, "Dernière activité", new Date());
-  logActivite_(found.values[0], "Assureur approuvé (RH)", "Compagnies : " + (compagnies || "—") + (prime ? (" · Prime : " + prime + " $") : ""), user);
+  logActivite_(found.values[0], "Assureur approuvé (RH)", "Compagnies : " + (compagnies || "—"), user);
   return { ok: true };
 }
 
@@ -962,11 +960,11 @@ function ficheRowByToken_(token) {
 
 function ficheToObject_(v) {
   return {
-    salaire: dcStr_(v[2]), vacances: dcStr_(v[3]),
-    cellNumero: dcStr_(v[4]), cellMarque: dcStr_(v[5]), cellModele: dcStr_(v[6]), cellSerie: dcStr_(v[7]),
-    portMarque: dcStr_(v[8]), portModele: dcStr_(v[9]), portSerie: dcStr_(v[10]),
-    courrielCompagnie: dcStr_(v[11]), utilisateur: dcStr_(v[12]), motDePasseTemp: dcStr_(v[13]), codeFuel: dcStr_(v[14]),
-    majPar: dcStr_(v[15]), majDate: dcStr_(v[16])
+    salaire: dcStr_(v[2]), vacances: dcStr_(v[3]), prime: dcStr_(v[4]),
+    cellNumero: dcStr_(v[5]), cellMarque: dcStr_(v[6]), cellModele: dcStr_(v[7]), cellSerie: dcStr_(v[8]),
+    portMarque: dcStr_(v[9]), portModele: dcStr_(v[10]), portSerie: dcStr_(v[11]),
+    courrielCompagnie: dcStr_(v[12]), utilisateur: dcStr_(v[13]), motDePasseTemp: dcStr_(v[14]), codeFuel: dcStr_(v[15]),
+    majPar: dcStr_(v[16]), majDate: dcStr_(v[17])
   };
 }
 
@@ -984,7 +982,7 @@ function rhSaveFiche(token, data) {
   var idInv = found.values[0];
   var row = [
     idInv, token,
-    String(data.salaire || ""), String(data.vacances || ""),
+    String(data.salaire || ""), String(data.vacances || ""), String(data.prime || ""),
     String(data.cellNumero || ""), String(data.cellMarque || ""), String(data.cellModele || ""), String(data.cellSerie || ""),
     String(data.portMarque || ""), String(data.portModele || ""), String(data.portSerie || ""),
     String(data.courrielCompagnie || ""), String(data.utilisateur || ""), String(data.motDePasseTemp || ""), String(data.codeFuel || ""),
