@@ -56,7 +56,8 @@ const COLONNES_INVITATIONS = [
   "Courriel", "Téléphone", "Compagnie", "Poste", "Date entrée prévue",
   "Gestionnaire", "Statut", "% complétion", "Dernière activité",
   "Lien formulaire", "Lien dossier Drive", "Notes internes",
-  "Assurance requise", "Assurance approuvée"
+  "Assurance requise", "Assurance approuvée",
+  "Compagnies assurées", "Prime ($)"
 ];
 const COLONNES_JOURNAL = ["Date/heure", "ID invitation", "Action", "Détail", "Utilisateur ou système"];
 
@@ -637,7 +638,9 @@ function invitationToObject_(v) {
     gestionnaire: dcStr_(v[11]), statut: dcStr_(v[12]), completion: dcStr_(v[13]), derniereActivite: dcStr_(v[14]),
     lienFormulaire: dcStr_(v[15]), lienDrive: dcStr_(v[16]), notes: dcStr_(v[17]),
     assuranceRequise: (v[18] === false || v[18] === 'false' || v[18] === 'Non') ? false : true,
-    assureurApprouve: (v[19] === true || v[19] === 'true' || v[19] === 'Oui')
+    assureurApprouve: (v[19] === true || v[19] === 'true' || v[19] === 'Oui'),
+    compagniesAssurees: dcStr_(v[20]),
+    prime: dcStr_(v[21])
   };
 }
 
@@ -706,7 +709,7 @@ function rhCreateInvitation(payload) {
     String(payload.compagnie || ""), String(payload.poste || ""),
     String(payload.dateEntree || ""), String(payload.gestionnaire || ""),
     statut, "0 %", new Date(), lienForm, folder.getUrl(), String(payload.notes || ""),
-    assuranceRequise, false
+    assuranceRequise, false, "", ""
   ]);
   logActivite_(invitationId, "Invitation créée", prenom + " " + nom + " — " + (payload.poste || ""), user);
 
@@ -919,13 +922,15 @@ function rhValidate(token, decision, commentaire) {
 }
 
 /** RH — approuve l'assureur : débloque la Partie 2 côté employé. */
-function rhApproveInsurance(token) {
+function rhApproveInsurance(token, compagnies, prime) {
   var user = requireRH_();
   var found = invitationRowByToken_(token);
   if (!found) return { ok: false, error: "Invitation introuvable." };
   setInvitationField_(token, "Assurance approuvée", true);
+  if (typeof compagnies !== "undefined" && compagnies !== null) setInvitationField_(token, "Compagnies assurées", String(compagnies));
+  if (typeof prime !== "undefined" && prime !== null) setInvitationField_(token, "Prime ($)", String(prime));
   setInvitationField_(token, "Dernière activité", new Date());
-  logActivite_(found.values[0], "Assureur approuvé (RH)", "Partie 2 débloquée", user);
+  logActivite_(found.values[0], "Assureur approuvé (RH)", "Compagnies : " + (compagnies || "—") + (prime ? (" · Prime : " + prime + " $") : ""), user);
   return { ok: true };
 }
 

@@ -92,7 +92,7 @@
           <option>Remorquage PDR 2011 inc.</option>
           <option>Livraison Primus inc.</option>
           <option>Remorquage Bean &amp; Fille</option>
-          <option>Remorquage M&amp;M</option>
+          <option>Remorquage Axis</option>
           <option>Entreprises affiliées</option>
         </select>
       </div>
@@ -398,8 +398,19 @@
         ? ('<div style="background:#eaf1fb;border:1px solid #cfe0f5;border-radius:12px;padding:12px 14px;margin:14px 0">'+
             '<b style="color:#2a5db0">🛡️ Parcours avec assurance</b> — '+
             (d.assureurApprouve
-              ? '<span class="tag green">Assureur approuvé ✓ (Partie 2 débloquée)</span>'
-              : '<span class="tag orange">En attente d\'approbation</span> <button class="btn sm" style="margin-left:8px" onclick="approveInsurance(\''+esc(d.token)+'\')">✓ Approuver l\'assureur</button>')+
+              ? ('<div style="margin-top:8px"><span class="tag green">Assureur approuvé ✓ (Partie 2 débloquée)</span>'+
+                  (d.compagniesAssurees?('<div style="margin-top:8px;font-size:13px"><b>Compagnies assurées :</b> '+esc(d.compagniesAssurees)+'</div>'):'')+
+                  (d.prime?('<div style="font-size:13px"><b>Prime :</b> '+esc(d.prime)+' $</div>'):'')+
+                 '</div>')
+              : ('<div style="margin-top:10px"><div style="font-size:12.5px;color:#5c626b;margin-bottom:6px">Approuvé par l\'assureur pour :</div>'+
+                 '<div class="docs" id="assurCos">'+
+                   '<label class="chk"><input type="checkbox" value="Remorquage PDR"> Remorquage PDR</label>'+
+                   '<label class="chk"><input type="checkbox" value="Livraison Primus"> Livraison Primus</label>'+
+                   '<label class="chk"><input type="checkbox" value="Canada inc"> Canada inc</label>'+
+                 '</div>'+
+                 '<div style="margin-top:8px;max-width:240px"><label style="font-size:12px">Prime ($) — s\'il y a lieu</label><input id="assurPrime" type="text" placeholder="Ex. 500"></div>'+
+                 '<button class="btn sm" style="margin-top:10px" onclick="approveInsurance(\''+esc(d.token)+'\')">✓ Approuver l\'assureur</button>'+
+                 '</div>'))+
           '</div>')
         : '<div style="background:#f0ede6;border:1px solid #e4e1da;border-radius:12px;padding:10px 14px;margin:14px 0;font-size:13px;color:#6b6f77">Parcours <b>sans assurance</b> (dossier employé seulement).</div>')+
       '<h3 style="margin:18px 0 4px">Documents reçus</h3>'+recusHtml+
@@ -441,9 +452,12 @@
       .withFailureHandler(function(e){ if(m) m.textContent=String(e&&e.message?e.message:e); }).rhSaveFiche(token, data);
   }
   function approveInsurance(token){
-    if(!confirm("Confirmer l'approbation de l'assureur ? La Partie 2 sera débloquée pour l'employé.")) return;
+    var cos=[]; document.querySelectorAll('#assurCos input:checked').forEach(function(c){ cos.push(c.value); });
+    var primeEl=document.getElementById('assurPrime'); var prime=primeEl?primeEl.value.trim():'';
+    if(!cos.length){ if(!confirm("Aucune compagnie cochée. Approuver quand même ?")) return; }
+    else if(!confirm("Confirmer l'approbation de l'assureur pour : "+cos.join(', ')+(prime?(' · prime '+prime+' $'):'')+" ? La Partie 2 sera débloquée.")) return;
     google.script.run.withSuccessHandler(function(res){ if(res&&res.ok){ alert('Assureur approuvé — la Partie 2 est débloquée pour l\'employé.'); openDetail(token); } else alert((res&&res.error)||'Échec.'); })
-      .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); }).rhApproveInsurance(token);
+      .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); }).rhApproveInsurance(token, cos.join(', '), prime);
   }
 
   function copyText(txt, btn){
