@@ -166,6 +166,10 @@ function doPost(e) {
     if (action === "lookupToken")   return jsonResponse_(lookupToken_(data));
     if (action === "updateProgress") return jsonResponse_(updateProgress_(data));
     if (action === "submit")         return jsonResponse_(handleSubmit_(data, e));
+    // --- Module PRÉQUALIFICATION (actions publiques protégées par token) ---
+    if (action === "lookupPrequalToken")    return jsonResponse_(lookupPrequalificationToken_(data));
+    if (action === "updatePrequalProgress") return jsonResponse_(updatePrequalificationProgress_(data));
+    if (action === "submitPrequal")         return jsonResponse_(submitPrequalification_(data));
     return jsonResponse_({ ok: false, error: "Action inconnue : " + action });
 
   } catch (err) {
@@ -1235,4 +1239,922 @@ function testConfiguration() {
   };
   var reponse = doPost({ postData: { contents: JSON.stringify(fauxPayload) } });
   Logger.log(reponse.getContent());
+}
+
+/************************************************************************
+ *  MODULE PRÉQUALIFICATION CANDIDAT / ASSURABILITÉ
+ *  ---------------------------------------------------------------------
+ *  Étape AVANT le formulaire d'embauche complet : la RH envoie une
+ *  préqualification courte au candidat (surtout chauffeurs), reçoit CV +
+ *  dossier de conduite + permis, obtient une analyse structurée assistée
+ *  par IA (si une clé Claude est configurée), puis prend une décision
+ *  HUMAINE. Seuls les candidats « Préapprouvés » reçoivent l'invitation
+ *  d'embauche complète.
+ *
+ *  ⚠️ L'IA ne refuse JAMAIS automatiquement. Elle ne fait que classer le
+ *  dossier (Vert / Jaune / Rouge / Incomplet) pour aider la RH.
+ *
+ *  Compatibilité : n'altère rien du système d'embauche existant. Les
+ *  onglets ci-dessous sont créés dans la feuille CENTRALE (SPREADSHEET_ID).
+ *  Exécuter rhSetupPrequalificationModule() une fois pour créer les onglets.
+ ************************************************************************/
+
+// ----- Onglets (feuille centrale) -----
+const SHEET_PREQUAL           = "prequalifications";
+const SHEET_PREQUAL_DOCS      = "prequalification_documents";
+const SHEET_PREQUAL_ANALYSIS  = "prequalification_analysis";
+const SHEET_PREQUAL_CORR      = "prequalification_corrections";
+const SHEET_PREQUAL_REMINDERS = "prequalification_reminders";
+
+const COLS_PREQUAL = [
+  "ID préqualification", "Token", "Date création", "Créé par",
+  "Prénom", "Nom", "Courriel", "Téléphone",
+  "Adresse", "Ville", "Province", "Code postal", "Date de naissance",
+  "Compagnie visée", "Poste visé", "Gestionnaire",
+  "Classe permis", "Expiration permis", "Années expérience conduite",
+  "Expérience remorquage", "Expérience transport", "Expérience livraison", "Expérience similaire",
+  "Accidents déclarés", "Suspensions déclarées",
+  "Statut préqualification", "Niveau de révision", "Prochaine action requise", "Assigné à", "% complétion", "Bloqué (raison)",
+  "Dernière activité", "Lien formulaire préqualification", "Lien dossier Drive",
+  "CV fourni", "Dossier conduite fourni", "Permis fourni",
+  "Consentement exactitude", "Consentement analyse", "Consentement assureur", "Consentement préqualification",
+  "Notes internes", "Résumé IA", "Recommandation IA", "Modèle IA",
+  "Décision RH", "Date décision", "Invitation embauche liée", "Token embauche lié"
+];
+const COLS_PREQUAL_DOCS = [
+  "Date réception", "ID préqualification", "Token", "Type document",
+  "Nom fichier original", "Lien Drive", "Statut document", "Commentaire RH"
+];
+const COLS_PREQUAL_ANALYSIS = [
+  "Date analyse", "ID préqualification", "Token", "Modèle utilisé",
+  "Analyse CV", "Analyse dossier conduite", "Permis valide", "Classe compatible",
+  "Expérience pertinente", "Points / infractions visibles", "Suspensions visibles",
+  "Éléments à vérifier", "Niveau de révision", "Recommandation", "Limites de l'analyse", "JSON brut si utile"
+];
+const COLS_PREQUAL_CORR = [
+  "Date", "ID préqualification", "Token", "Correction demandée",
+  "Demandé par", "Statut correction", "Date résolution"
+];
+const COLS_PREQUAL_REMINDERS = [
+  "Date envoi", "ID préqualification", "Token", "Type rappel", "Destinataire", "Détail"
+];
+
+const PREQUAL_STATUTS = [
+  "Préqualification créée", "Préqualification envoyée", "Lien ouvert", "Préqualification commencée",
+  "Documents partiellement reçus", "Préqualification reçue", "Analyse IA en cours", "Analyse RH requise",
+  "Dossier incomplet", "Correction demandée", "À transmettre à l'assureur", "En attente assureur",
+  "Préapprouvé", "Refus assurance", "Invitation embauche complète envoyée", "Archivé"
+];
+const PREQUAL_NIVEAUX = ["Vert", "Jaune", "Rouge", "Incomplet"];
+
+// State machine : statut -> action suivante, responsable, % complétion.
+const PREQUAL_STATE = {
+  "Préqualification créée":                { next: "Envoyer l'invitation au candidat",           who: "RH",        pct: 5 },
+  "Préqualification envoyée":              { next: "En attente d'ouverture par le candidat",     who: "Candidat",  pct: 10 },
+  "Lien ouvert":                           { next: "En attente de soumission",                   who: "Candidat",  pct: 20 },
+  "Préqualification commencée":            { next: "Le candidat complète le formulaire",         who: "Candidat",  pct: 35 },
+  "Documents partiellement reçus":         { next: "En attente des documents restants",          who: "Candidat",  pct: 60 },
+  "Préqualification reçue":                { next: "Lancer ou attendre l'analyse",               who: "RH",        pct: 70 },
+  "Analyse IA en cours":                   { next: "Analyse automatique en cours",               who: "Système",   pct: 75 },
+  "Analyse RH requise":                    { next: "Réviser l'analyse et décider",               who: "RH",        pct: 80 },
+  "Dossier incomplet":                     { next: "Demander les éléments manquants",            who: "RH",        pct: 60 },
+  "Correction demandée":                   { next: "En attente de correction du candidat",       who: "Candidat",  pct: 55 },
+  "À transmettre à l'assureur":            { next: "Transmettre le dossier à l'assureur",        who: "RH",        pct: 85 },
+  "En attente assureur":                   { next: "En attente de la réponse de l'assureur",     who: "Assureur",  pct: 90 },
+  "Préapprouvé":                           { next: "Envoyer le formulaire d'embauche complet",   who: "RH",        pct: 100 },
+  "Refus assurance":                       { next: "Clore le dossier / informer le candidat",    who: "RH",        pct: 100 },
+  "Invitation embauche complète envoyée":  { next: "Suivre le dossier d'embauche",               who: "RH/Candidat", pct: 100 },
+  "Archivé":                               { next: "—",                                          who: "—",         pct: 100 }
+};
+
+// ==================== HELPERS GÉNÉRIQUES (colonnes par en-tête) ====================
+
+/** Garantit que toutes les colonnes attendues existent (ajoute les manquantes en fin, sans supprimer). */
+function ensureColumns_(sheet, needed) {
+  var lastCol = sheet.getLastColumn();
+  if (sheet.getLastRow() === 0 || lastCol === 0) {
+    sheet.appendRow(needed);
+    sheet.getRange(1, 1, 1, needed.length).setFontWeight("bold").setBackground("#f4f1ea");
+    sheet.setFrozenRows(1);
+    return;
+  }
+  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(function (h) { return String(h).trim(); });
+  var missing = needed.filter(function (h) { return headers.indexOf(h) === -1; });
+  if (missing.length) {
+    sheet.getRange(1, lastCol + 1, 1, missing.length).setValues([missing]);
+    sheet.getRange(1, 1, 1, lastCol + missing.length).setFontWeight("bold").setBackground("#f4f1ea");
+    sheet.setFrozenRows(1);
+  }
+}
+
+/** Ouvre (ou crée) un onglet du module dans la feuille centrale, colonnes garanties. */
+function pqSheet_(name, cols) {
+  var sheet = getOrCreateSheet_(getSpreadsheet_(), name, cols);
+  ensureColumns_(sheet, cols);
+  return sheet;
+}
+
+/** Map en-tête -> index de colonne (0-based). */
+function headerMap_(sheet) {
+  var lastCol = sheet.getLastColumn();
+  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var m = {};
+  headers.forEach(function (h, i) { m[String(h).trim()] = i; });
+  return m;
+}
+
+/** Construit une ligne (tableau) alignée sur l'ordre des colonnes à partir d'un objet {enTête: valeur}. */
+function buildRow_(cols, obj) {
+  return cols.map(function (c) { var v = obj[c]; return (v === undefined || v === null) ? "" : v; });
+}
+
+// ==================== ACCÈS AUX PRÉQUALIFICATIONS ====================
+
+function pqFindByToken_(token) {
+  var sheet = pqSheet_(SHEET_PREQUAL, COLS_PREQUAL);
+  var map = headerMap_(sheet);
+  var values = sheet.getDataRange().getValues();
+  var tc = map["Token"];
+  for (var r = 1; r < values.length; r++) {
+    if (String(values[r][tc]) === String(token)) return { sheet: sheet, map: map, rowIndex: r + 1, values: values[r] };
+  }
+  return null;
+}
+function pqFindById_(id) {
+  var sheet = pqSheet_(SHEET_PREQUAL, COLS_PREQUAL);
+  var map = headerMap_(sheet);
+  var values = sheet.getDataRange().getValues();
+  var ic = map["ID préqualification"];
+  for (var r = 1; r < values.length; r++) {
+    if (String(values[r][ic]) === String(id)) return { sheet: sheet, map: map, rowIndex: r + 1, values: values[r] };
+  }
+  return null;
+}
+
+/** Objet {enTête: valeur} d'une ligne trouvée (Dates -> chaînes via dcStr_). */
+function pqObj_(found) {
+  var o = {};
+  for (var k in found.map) { o[k] = dcStr_(found.values[found.map[k]]); }
+  o.__nomComplet = ((o["Prénom"] || "") + " " + (o["Nom"] || "")).trim();
+  return o;
+}
+
+function pqSet_(found, colName, value) {
+  var c = found.map[colName];
+  if (c === undefined) return false;
+  found.sheet.getRange(found.rowIndex, c + 1).setValue(value);
+  found.values[c] = value;
+  return true;
+}
+function pqSetMany_(found, obj) {
+  for (var k in obj) { var v = obj[k]; if (v !== undefined) pqSet_(found, k, (v === null ? "" : v)); }
+}
+
+/** Applique un statut + met à jour action/responsable/% + Dernière activité + journal. */
+function pqSetStatus_(found, statut, user, detail) {
+  pqSet_(found, "Statut préqualification", statut);
+  var info = PREQUAL_STATE[statut] || { next: "", who: "", pct: "" };
+  pqSet_(found, "Prochaine action requise", info.next);
+  pqSet_(found, "Assigné à", info.who);
+  if (info.pct !== "") pqSet_(found, "% complétion", info.pct + " %");
+  pqSet_(found, "Dernière activité", new Date());
+  var id = found.values[found.map["ID préqualification"]];
+  logActivite_(id, "Préqualification — " + statut, detail || "", user || "système");
+}
+
+// ==================== IDENTIFIANTS / LIENS / DOSSIER DRIVE ====================
+
+/** Compteur quotidien dédié : WT-PREQ-YYYYMMDD-NNNN. */
+function nextPrequalId_() {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var today = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || "America/Toronto", "yyyyMMdd");
+    var key = "SEQPQ_" + today;
+    var seq = parseInt(props.getProperty(key) || "0", 10) + 1;
+    props.setProperty(key, String(seq));
+    return "WT-PREQ-" + today + "-" + ("0000" + seq).slice(-4);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function buildPrequalLink_(token) {
+  var base = PUBLIC_FORM_BASE_URL;
+  if (base.charAt(base.length - 1) !== "/") base += "/";
+  return base + "prequalification.html?token=" + encodeURIComponent(token);
+}
+
+function getOrCreateSubfolder_(parent, name) {
+  var it = parent.getFoldersByName(name);
+  return it.hasNext() ? it.next() : parent.createFolder(name);
+}
+
+/** Dossier candidat « NOM Prénom » dans le sous-dossier « Préqualifications » de la compagnie (sans doublon). */
+function getOrCreatePrequalFolder_(nom, prenom, compagnie) {
+  var root = companyFolder_(compagnie);
+  var sub = getOrCreateSubfolder_(root, "Préqualifications");
+  var name = (normalizeName(nom).toUpperCase() + " " + capitalizeName(normalizeName(prenom))).trim() || "Candidat sans nom";
+  var it = sub.getFoldersByName(name);
+  return it.hasNext() ? it.next() : sub.createFolder(name);
+}
+
+// ==================== ACTIONS PUBLIQUES (formulaire candidat, token) ====================
+
+/** Préremplissage + marque « Lien ouvert ». Ne renvoie jamais les notes internes ni l'analyse. */
+function lookupPrequalificationToken_(data) {
+  var token = String(data.token || "");
+  if (!token) return { ok: false, error: "Token manquant." };
+  var found = pqFindByToken_(token);
+  if (!found) return { ok: false, error: "Lien invalide ou préqualification introuvable." };
+  var rec = pqObj_(found);
+  if (rec["Statut préqualification"] === "Préqualification envoyée" || rec["Statut préqualification"] === "Préqualification créée") {
+    pqSetStatus_(found, "Lien ouvert", "candidat", "");
+  } else {
+    pqSet_(found, "Dernière activité", new Date());
+  }
+  return {
+    ok: true,
+    prefill: {
+      prenom: rec["Prénom"], nom: rec["Nom"], courriel: rec["Courriel"], telephone: rec["Téléphone"],
+      adresse: rec["Adresse"], ville: rec["Ville"], province: rec["Province"], codePostal: rec["Code postal"],
+      compagnie: rec["Compagnie visée"], poste: rec["Poste visé"], gestionnaire: rec["Gestionnaire"],
+      permisClasse: rec["Classe permis"], permisExpiration: rec["Expiration permis"]
+    }
+  };
+}
+
+/** Progression sans rétrograder (Lien ouvert -> commencée -> documents partiellement reçus). */
+function updatePrequalificationProgress_(data) {
+  var token = String(data.token || "");
+  if (!token) return { ok: false, error: "Token manquant." };
+  var statut = String(data.statut || "");
+  var permis = ["Préqualification commencée", "Documents partiellement reçus"];
+  if (permis.indexOf(statut) === -1) return { ok: false, error: "Statut de progression non permis." };
+  var found = pqFindByToken_(token);
+  if (!found) return { ok: false, error: "Préqualification introuvable." };
+  var actuel = String(found.values[found.map["Statut préqualification"]] || "");
+  if (PREQUAL_STATUTS.indexOf(statut) > PREQUAL_STATUTS.indexOf(actuel)) pqSetStatus_(found, statut, "candidat", "");
+  else pqSet_(found, "Dernière activité", new Date());
+  return { ok: true };
+}
+
+/** Enregistre chaque fichier reçu dans le dossier Drive + journal documents. */
+function savePrequalFiles_(folder, meta, data) {
+  var fichiers = data.fichiers || [];
+  var saved = [];
+  if (!fichiers.length) return saved;
+  var docsSheet = pqSheet_(SHEET_PREQUAL_DOCS, COLS_PREQUAL_DOCS);
+  for (var i = 0; i < fichiers.length; i++) {
+    var f = fichiers[i] || {};
+    if (!f.base64) continue;
+    try {
+      var bytes = Utilities.base64Decode(String(f.base64));
+      var ext = String(f.nom || "").indexOf(".") >= 0 ? "." + String(f.nom).split(".").pop().toLowerCase() : "";
+      var baseName = cleanFileName_((f.categorie || "Document") + " - " + meta.nomComplet) + ext;
+      var blob = Utilities.newBlob(bytes, f.mimeType || "application/octet-stream", baseName);
+      var file = createFileWithVersioning_(folder, blob, baseName);
+      saved.push({ categorie: f.categorie || "Document", nom: f.nom || "", url: file.getUrl() });
+      docsSheet.appendRow(buildRow_(COLS_PREQUAL_DOCS, {
+        "Date réception": new Date(), "ID préqualification": meta.id, "Token": meta.token,
+        "Type document": f.categorie || "Document", "Nom fichier original": f.nom || "",
+        "Lien Drive": file.getUrl(), "Statut document": "Reçu", "Commentaire RH": ""
+      }));
+    } catch (e) { logError_(e, null, "savePrequalFiles_ « " + (f.nom || "?") + " »"); }
+  }
+  return saved;
+}
+
+/** Soumission du candidat : sauvegarde infos + fichiers, détermine la complétude, notifie la RH, lance l'IA si configurée. */
+function submitPrequalification_(data) {
+  var token = String(data.token || "");
+  if (!token) return { ok: false, error: "Token manquant." };
+  var found = pqFindByToken_(token);
+  if (!found) return { ok: false, error: "Lien invalide ou préqualification introuvable." };
+  var vf = validerFichiers_(data.fichiers || []);
+  if (vf) return { ok: false, error: vf };
+
+  var d = data.data || {};
+  pqSetMany_(found, {
+    "Prénom": data.prenom, "Nom": data.nom, "Courriel": data.courriel || d.courriel, "Téléphone": data.telephone || d.telephone,
+    "Adresse": d.adresse, "Ville": d.ville, "Province": d.province, "Code postal": d.codePostal,
+    "Date de naissance": parseDateMaybe_(d.dateNaissance),
+    "Compagnie visée": data.compagnie || d.compagnie, "Poste visé": data.poste || d.poste, "Gestionnaire": d.gestionnaire,
+    "Classe permis": d.permisClasse, "Expiration permis": parseDateMaybe_(d.permisExpiration),
+    "Années expérience conduite": d.anneesExperience,
+    "Expérience remorquage": d.expRemorquage, "Expérience transport": d.expTransport,
+    "Expérience livraison": d.expLivraison, "Expérience similaire": d.expSimilaire,
+    "Accidents déclarés": d.accidents, "Suspensions déclarées": d.suspensions,
+    "Consentement exactitude": (d.consentExactitude ? "Oui" : "Non"),
+    "Consentement analyse": (d.consentAnalyse ? "Oui" : "Non"),
+    "Consentement assureur": (d.consentAssureur ? "Oui" : "Non"),
+    "Consentement préqualification": (d.consentPrequalification ? "Oui" : "Non")
+  });
+
+  var rec = pqObj_(found);
+  var compagnie = rec["Compagnie visée"] || "";
+  var folder = getOrCreatePrequalFolder_(rec["Nom"], rec["Prénom"], compagnie);
+  pqSet_(found, "Lien dossier Drive", folder.getUrl());
+
+  var saved = savePrequalFiles_(folder, { id: rec["ID préqualification"], token: token, nomComplet: folder.getName() }, data);
+  var cats = {};
+  saved.forEach(function (s) { cats[s.categorie] = true; });
+  if (cats["CV"]) pqSet_(found, "CV fourni", "Oui");
+  if (cats["Dossier de conduite"]) pqSet_(found, "Dossier conduite fourni", "Oui");
+  if (cats["Permis de conduire"]) pqSet_(found, "Permis fourni", "Oui");
+
+  rec = pqObj_(found);
+  var poste = (rec["Poste visé"] || "").toLowerCase();
+  var isDriver = poste.indexOf("chauffeur") >= 0 || (rec["Classe permis"] || "") !== "" ||
+    !!cats["Permis de conduire"] || !!cats["Dossier de conduite"];
+  var manquants = [];
+  if (rec["CV fourni"] !== "Oui") manquants.push("CV");
+  if (isDriver && rec["Dossier conduite fourni"] !== "Oui") manquants.push("Dossier de conduite");
+  if (isDriver && rec["Permis fourni"] !== "Oui") manquants.push("Permis de conduire");
+
+  if (manquants.length) {
+    pqSet_(found, "Bloqué (raison)", "Documents manquants : " + manquants.join(", "));
+    pqSet_(found, "Niveau de révision", "Incomplet");
+    pqSetStatus_(found, "Dossier incomplet", "candidat", "Manquants : " + manquants.join(", "));
+  } else {
+    pqSet_(found, "Bloqué (raison)", "");
+    pqSetStatus_(found, "Préqualification reçue", "candidat", "");
+  }
+
+  try { notifyRHPrequalSubmitted_(pqObj_(found), saved, manquants, folder); }
+  catch (e) { logError_(e, null, "notifyRHPrequalSubmitted_"); }
+
+  // Analyse IA automatique seulement si dossier complet + clé configurée.
+  if (!manquants.length) {
+    var key = PropertiesService.getScriptProperties().getProperty("ANTHROPIC_API_KEY");
+    if (key) {
+      var ok = false;
+      try { pqSetStatus_(found, "Analyse IA en cours", "candidat", ""); var ar = analyzePrequalificationWithClaude_(token); ok = !!(ar && ar.ok); }
+      catch (e) { logError_(e, null, "analyse auto"); }
+      if (!ok) pqSetStatus_(found, "Analyse RH requise", "système", "Analyse IA indisponible — révision manuelle requise");
+    } else {
+      pqSetStatus_(found, "Analyse RH requise", "système", "Analyse IA non configurée — révision manuelle requise");
+    }
+  }
+  return { ok: true, statut: pqObj_(found)["Statut préqualification"], documentsManquants: manquants };
+}
+
+// ==================== ANALYSE CLAUDE (optionnelle) ====================
+
+const PREQUAL_PROMPT =
+  "Analyse ce dossier de préqualification pour un poste de chauffeur ou employé lié au transport/remorquage. " +
+  "Tu dois extraire les informations pertinentes du CV et du dossier de conduite. " +
+  "Tu ne dois JAMAIS prendre une décision d'embauche. Tu dois seulement produire une analyse de support pour la RH " +
+  "avec un niveau de révision Vert, Jaune, Rouge ou Incomplet. Sois prudent, mentionne les limites de ton analyse, " +
+  "et indique clairement les éléments qui doivent être validés manuellement par la RH ou l'assureur. " +
+  "N'invente aucune information. Si un document est illisible ou incomplet, indique-le clairement et utilise « Incomplet ».";
+
+const PREQUAL_ANALYSIS_SCHEMA = {
+  type: "object",
+  properties: {
+    resume_cv: { type: "string" },
+    experience_pertinente: { type: "string" },
+    classe_permis_detectee: { type: "string" },
+    permis_valide: { type: "string" },
+    dossier_conduite_fourni: { type: "string" },
+    infractions_ou_points_visibles: { type: "string" },
+    suspensions_visibles: { type: "string" },
+    elements_a_valider: { type: "string" },
+    niveau_revision: { type: "string", enum: ["Vert", "Jaune", "Rouge", "Incomplet"] },
+    recommandation: { type: "string" },
+    limites_analyse: { type: "string" }
+  },
+  required: ["resume_cv", "experience_pertinente", "classe_permis_detectee", "permis_valide",
+    "dossier_conduite_fourni", "infractions_ou_points_visibles", "suspensions_visibles",
+    "elements_a_valider", "niveau_revision", "recommandation", "limites_analyse"],
+  additionalProperties: false
+};
+
+/**
+ * Récupère les documents (PDF/images) du dossier candidat en base64 pour l'IA.
+ * Bornes de sécurité : ≤ 4 Mo/fichier, max 4 fichiers, ≤ 22 Mo cumulés (le base64
+ * gonfle ~33 % ; on reste bien sous la limite de 32 Mo/requête de l'API).
+ * HEIC est ignoré (non pris en charge par la vision de l'API) — signalé dans les limites.
+ */
+function pqCollectDocBlobs_(folder) {
+  var out = [];
+  var cumB64 = 0;
+  var files = folder.getFiles();
+  while (files.hasNext()) {
+    var f = files.next();
+    var blob = f.getBlob();
+    var mime = blob.getContentType() || "";
+    var okMime = (mime === "application/pdf") || (["image/jpeg", "image/png", "image/gif", "image/webp"].indexOf(mime) >= 0);
+    if (okMime && f.getSize() <= 4 * 1024 * 1024) {
+      var b64 = Utilities.base64Encode(blob.getBytes());
+      if (cumB64 + b64.length > 22 * 1024 * 1024) break;
+      cumB64 += b64.length;
+      out.push({ name: f.getName(), mime: mime, b64: b64 });
+    }
+    if (out.length >= 4) break;
+  }
+  return out;
+}
+
+function pqBuildAnalysisContent_(rec, blobs) {
+  var content = [];
+  blobs.forEach(function (b) {
+    if (b.mime === "application/pdf") content.push({ type: "document", source: { type: "base64", media_type: "application/pdf", data: b.b64 } });
+    else content.push({ type: "image", source: { type: "base64", media_type: b.mime, data: b.b64 } });
+  });
+  var lignes = [
+    "Informations déclarées par le candidat :",
+    "Nom : " + rec.__nomComplet,
+    "Poste visé : " + (rec["Poste visé"] || "—"),
+    "Compagnie visée : " + (rec["Compagnie visée"] || "—"),
+    "Classe de permis déclarée : " + (rec["Classe permis"] || "—"),
+    "Expiration du permis : " + (rec["Expiration permis"] || "—"),
+    "Années d'expérience de conduite : " + (rec["Années expérience conduite"] || "—"),
+    "Expérience remorquage : " + (rec["Expérience remorquage"] || "—"),
+    "Expérience transport : " + (rec["Expérience transport"] || "—"),
+    "Expérience livraison : " + (rec["Expérience livraison"] || "—"),
+    "Expérience similaire : " + (rec["Expérience similaire"] || "—"),
+    "Accidents/incidents déclarés : " + (rec["Accidents déclarés"] || "—"),
+    "Suspensions/restrictions déclarées : " + (rec["Suspensions déclarées"] || "—"),
+    "",
+    "Documents joints : " + (blobs.length ? blobs.map(function (b) { return b.name; }).join(", ") : "aucun document lisible fourni")
+  ];
+  content.push({ type: "text", text: PREQUAL_PROMPT + "\n\n" + lignes.join("\n") + "\n\nProduis uniquement l'analyse structurée demandée." });
+  return content;
+}
+
+/** Appel Messages API via UrlFetchApp, sortie JSON structurée. */
+function callClaude_(key, model, content, schema) {
+  var payload = {
+    model: model,
+    max_tokens: 4000,
+    messages: [{ role: "user", content: content }],
+    output_config: { format: { type: "json_schema", schema: schema } }
+  };
+  var res = UrlFetchApp.fetch("https://api.anthropic.com/v1/messages", {
+    method: "post",
+    contentType: "application/json",
+    headers: { "x-api-key": key, "anthropic-version": "2023-06-01" },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+  var code = res.getResponseCode();
+  var body = res.getContentText();
+  if (code !== 200) throw new Error("Claude API " + code + " : " + String(body).substring(0, 300));
+  var j = JSON.parse(body);
+  var text = "";
+  (j.content || []).forEach(function (b) { if (b.type === "text") text += b.text; });
+  if (!text) throw new Error("Réponse Claude vide.");
+  return JSON.parse(text);
+}
+
+function pqWriteAnalysis_(rec, model, obj) {
+  var sheet = pqSheet_(SHEET_PREQUAL_ANALYSIS, COLS_PREQUAL_ANALYSIS);
+  sheet.appendRow(buildRow_(COLS_PREQUAL_ANALYSIS, {
+    "Date analyse": new Date(), "ID préqualification": rec["ID préqualification"], "Token": rec["Token"], "Modèle utilisé": model,
+    "Analyse CV": obj.resume_cv, "Analyse dossier conduite": obj.dossier_conduite_fourni,
+    "Permis valide": obj.permis_valide, "Classe compatible": obj.classe_permis_detectee,
+    "Expérience pertinente": obj.experience_pertinente, "Points / infractions visibles": obj.infractions_ou_points_visibles,
+    "Suspensions visibles": obj.suspensions_visibles, "Éléments à vérifier": obj.elements_a_valider,
+    "Niveau de révision": obj.niveau_revision, "Recommandation": obj.recommandation,
+    "Limites de l'analyse": obj.limites_analyse, "JSON brut si utile": JSON.stringify(obj)
+  }));
+}
+
+/**
+ * Analyse un dossier de préqualification avec Claude (si ANTHROPIC_API_KEY est configurée).
+ * Ne prend JAMAIS de décision : écrit seulement un niveau de révision + une recommandation de support.
+ */
+function analyzePrequalificationWithClaude_(idOrToken) {
+  var found = pqFindByToken_(idOrToken) || pqFindById_(idOrToken);
+  if (!found) return { ok: false, error: "Préqualification introuvable." };
+  var props = PropertiesService.getScriptProperties();
+  var key = props.getProperty("ANTHROPIC_API_KEY");
+  if (!key) return { ok: false, notConfigured: true, message: "Analyse IA non configurée — révision manuelle requise." };
+
+  var rec = pqObj_(found);
+  var model = props.getProperty("ANTHROPIC_MODEL") || "claude-opus-4-8";
+  var folder;
+  try { folder = getOrCreatePrequalFolder_(rec["Nom"], rec["Prénom"], rec["Compagnie visée"]); }
+  catch (e) { folder = null; }
+  var blobs = folder ? pqCollectDocBlobs_(folder) : [];
+  var content = pqBuildAnalysisContent_(rec, blobs);
+
+  var obj;
+  try { obj = callClaude_(key, model, content, PREQUAL_ANALYSIS_SCHEMA); }
+  catch (e) { logError_(e, null, "callClaude_"); return { ok: false, error: String(e && e.message ? e.message : e) }; }
+
+  pqWriteAnalysis_(rec, model, obj);
+  pqSet_(found, "Résumé IA", String(obj.resume_cv || "").substring(0, 900));
+  pqSet_(found, "Recommandation IA", String(obj.recommandation || "").substring(0, 900));
+  pqSet_(found, "Niveau de révision", PREQUAL_NIVEAUX.indexOf(obj.niveau_revision) >= 0 ? obj.niveau_revision : "Jaune");
+  pqSet_(found, "Modèle IA", model);
+  pqSetStatus_(found, "Analyse RH requise", "système", "Analyse IA générée (" + (obj.niveau_revision || "") + ")");
+  return { ok: true, analyse: obj, model: model };
+}
+
+// ==================== ACTIONS RH (liste blanche requireRH_) ====================
+
+function rhCreatePrequalification(payload) {
+  var user = requireRH_();
+  payload = payload || {};
+  var prenom = String(payload.prenom || "").trim();
+  var nom = String(payload.nom || "").trim();
+  if (!prenom || !nom) return { ok: false, error: "Le prénom et le nom sont requis." };
+
+  var id = nextPrequalId_();
+  var token = generateToken_(id);
+  var lien = buildPrequalLink_(token);
+  var folder = getOrCreatePrequalFolder_(nom, prenom, payload.compagnie);
+  var envoyer = !!(payload.envoyerCourriel && payload.courriel);
+  var statut = envoyer ? "Préqualification envoyée" : "Préqualification créée";
+  var info = PREQUAL_STATE[statut];
+
+  var sheet = pqSheet_(SHEET_PREQUAL, COLS_PREQUAL);
+  sheet.appendRow(buildRow_(COLS_PREQUAL, {
+    "ID préqualification": id, "Token": token, "Date création": new Date(), "Créé par": user,
+    "Prénom": prenom, "Nom": nom, "Courriel": String(payload.courriel || ""), "Téléphone": String(payload.telephone || ""),
+    "Compagnie visée": String(payload.compagnie || ""), "Poste visé": String(payload.poste || ""),
+    "Gestionnaire": String(payload.gestionnaire || ""), "Classe permis": String(payload.classePermis || ""),
+    "Statut préqualification": statut, "Niveau de révision": "", "Prochaine action requise": info.next,
+    "Assigné à": info.who, "% complétion": info.pct + " %", "Dernière activité": new Date(),
+    "Lien formulaire préqualification": lien, "Lien dossier Drive": folder.getUrl(),
+    "Notes internes": String(payload.notes || "")
+  }));
+  logActivite_(id, "Préqualification créée", prenom + " " + nom + " — " + (payload.poste || ""), user);
+
+  var courrielEnvoye = false;
+  if (envoyer) {
+    try { sendPrequalInvitationEmail_({ "Prénom": prenom, "Courriel": payload.courriel, "Lien formulaire préqualification": lien, "Poste visé": payload.poste }); courrielEnvoye = true; logActivite_(id, "Courriel préqualification envoyé", "à " + payload.courriel, user); }
+    catch (e) { logError_(e, null, "sendPrequalInvitationEmail_ (création)"); }
+  }
+  return { ok: true, id: id, token: token, lien: lien, lienDrive: folder.getUrl(), courrielEnvoye: courrielEnvoye, sms: buildPrequalSms_(prenom, lien) };
+}
+
+function buildPrequalSms_(prenom, lien) {
+  return "Bonjour " + (prenom || "") + ", Groupe WT Corporation vous invite à préqualifier votre candidature (préparez CV, dossier de conduite et permis) : " + lien + ". Ceci n'est pas une promesse d'embauche.";
+}
+
+/** Objet léger pour le tableau de bord (une ligne par préqualification). */
+function prequalToListObj_(map, row) {
+  function v(name) { return dcStr_(row[map[name]]); }
+  return {
+    id: v("ID préqualification"), token: v("Token"), prenom: v("Prénom"), nom: v("Nom"),
+    courriel: v("Courriel"), telephone: v("Téléphone"), compagnie: v("Compagnie visée"), poste: v("Poste visé"),
+    classePermis: v("Classe permis"), anneesExp: v("Années expérience conduite"),
+    statut: v("Statut préqualification"), niveau: v("Niveau de révision"),
+    prochaineAction: v("Prochaine action requise"), assigneA: v("Assigné à"), completion: v("% complétion"),
+    dateCreation: v("Date création"), derniereActivite: v("Dernière activité"),
+    lienFormulaire: v("Lien formulaire préqualification"), lienDrive: v("Lien dossier Drive"),
+    cvFourni: v("CV fourni"), dossierFourni: v("Dossier conduite fourni"), permisFourni: v("Permis fourni"),
+    resumeIA: v("Résumé IA"), recommandationIA: v("Recommandation IA"),
+    invitationLiee: v("Invitation embauche liée")
+  };
+}
+
+function rhListPrequalifications() {
+  requireRH_();
+  var sheet = pqSheet_(SHEET_PREQUAL, COLS_PREQUAL);
+  var map = headerMap_(sheet);
+  var values = sheet.getDataRange().getValues();
+  var out = [];
+  for (var r = 1; r < values.length; r++) { if (values[r][map["ID préqualification"]]) out.push(prequalToListObj_(map, values[r])); }
+  var iaConfiguree = !!PropertiesService.getScriptProperties().getProperty("ANTHROPIC_API_KEY");
+  return { ok: true, prequalifications: out, statuts: PREQUAL_STATUTS, niveaux: PREQUAL_NIVEAUX, iaConfiguree: iaConfiguree };
+}
+
+function rhGetPrequalification(token) {
+  requireRH_();
+  var found = pqFindByToken_(token);
+  if (!found) return { ok: false, error: "Préqualification introuvable." };
+  var rec = pqObj_(found);
+  var id = rec["ID préqualification"];
+  var apiConfigured = !!PropertiesService.getScriptProperties().getProperty("ANTHROPIC_API_KEY");
+  return {
+    ok: true, dossier: rec, documents: pqDocsFor_(id), analyse: pqAnalysisFor_(id),
+    corrections: pqCorrectionsFor_(id), statuts: PREQUAL_STATUTS, niveaux: PREQUAL_NIVEAUX, iaConfiguree: apiConfigured
+  };
+}
+
+function pqDocsFor_(id) {
+  var sheet = pqSheet_(SHEET_PREQUAL_DOCS, COLS_PREQUAL_DOCS);
+  var map = headerMap_(sheet);
+  var vals = sheet.getDataRange().getValues();
+  var out = [];
+  for (var r = 1; r < vals.length; r++) {
+    if (String(vals[r][map["ID préqualification"]]) === String(id)) {
+      out.push({ date: dcStr_(vals[r][map["Date réception"]]), type: dcStr_(vals[r][map["Type document"]]), nom: dcStr_(vals[r][map["Nom fichier original"]]), lien: dcStr_(vals[r][map["Lien Drive"]]), statut: dcStr_(vals[r][map["Statut document"]]), commentaire: dcStr_(vals[r][map["Commentaire RH"]]) });
+    }
+  }
+  return out;
+}
+function pqAnalysisFor_(id) {
+  var sheet = pqSheet_(SHEET_PREQUAL_ANALYSIS, COLS_PREQUAL_ANALYSIS);
+  var map = headerMap_(sheet);
+  var vals = sheet.getDataRange().getValues();
+  var last = null;
+  for (var r = 1; r < vals.length; r++) { if (String(vals[r][map["ID préqualification"]]) === String(id)) last = vals[r]; }
+  if (!last) return null;
+  var o = {};
+  for (var k in map) o[k] = dcStr_(last[map[k]]);
+  return o;
+}
+function pqCorrectionsFor_(id) {
+  var sheet = pqSheet_(SHEET_PREQUAL_CORR, COLS_PREQUAL_CORR);
+  var map = headerMap_(sheet);
+  var vals = sheet.getDataRange().getValues();
+  var out = [];
+  for (var r = 1; r < vals.length; r++) {
+    if (String(vals[r][map["ID préqualification"]]) === String(id)) {
+      out.push({ date: dcStr_(vals[r][map["Date"]]), demande: dcStr_(vals[r][map["Correction demandée"]]), par: dcStr_(vals[r][map["Demandé par"]]), statut: dcStr_(vals[r][map["Statut correction"]]), resolution: dcStr_(vals[r][map["Date résolution"]]) });
+    }
+  }
+  return out;
+}
+
+function rhUpdatePrequalificationStatus(token, statut) {
+  var user = requireRH_();
+  if (PREQUAL_STATUTS.indexOf(statut) === -1) return { ok: false, error: "Statut invalide." };
+  var found = pqFindByToken_(token);
+  if (!found) return { ok: false, error: "Préqualification introuvable." };
+  pqSetStatus_(found, statut, user, "Changement manuel RH");
+  return { ok: true };
+}
+
+function rhAddPrequalificationNote(token, note) {
+  var user = requireRH_();
+  note = String(note || "").trim();
+  if (!note) return { ok: false, error: "Note vide." };
+  var found = pqFindByToken_(token);
+  if (!found) return { ok: false, error: "Préqualification introuvable." };
+  var existing = String(found.values[found.map["Notes internes"]] || "");
+  var stamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || "America/Toronto", "yyyy-MM-dd HH:mm");
+  pqSet_(found, "Notes internes", (existing ? existing + "\n" : "") + "[" + stamp + " · " + user + "] " + note);
+  pqSet_(found, "Dernière activité", new Date());
+  logActivite_(found.values[found.map["ID préqualification"]], "Note préqualification ajoutée", note, user);
+  return { ok: true };
+}
+
+function rhRequestPrequalificationCorrection(token, message) {
+  var user = requireRH_();
+  message = String(message || "").trim();
+  if (!message) return { ok: false, error: "Précisez les éléments à corriger." };
+  var found = pqFindByToken_(token);
+  if (!found) return { ok: false, error: "Préqualification introuvable." };
+  var rec = pqObj_(found);
+  var corr = pqSheet_(SHEET_PREQUAL_CORR, COLS_PREQUAL_CORR);
+  corr.appendRow(buildRow_(COLS_PREQUAL_CORR, {
+    "Date": new Date(), "ID préqualification": rec["ID préqualification"], "Token": token,
+    "Correction demandée": message, "Demandé par": user, "Statut correction": "Demandée", "Date résolution": ""
+  }));
+  pqSetStatus_(found, "Correction demandée", user, message);
+  try { sendPrequalIncompleteEmail_(rec, message); } catch (e) { logError_(e, null, "sendPrequalIncompleteEmail_"); }
+  return { ok: true };
+}
+
+function rhMarkSendToInsurance(token) {
+  var user = requireRH_();
+  var found = pqFindByToken_(token);
+  if (!found) return { ok: false, error: "Préqualification introuvable." };
+  pqSetStatus_(found, "À transmettre à l'assureur", user, "");
+  return { ok: true };
+}
+function rhMarkInsurancePending(token) {
+  var user = requireRH_();
+  var found = pqFindByToken_(token);
+  if (!found) return { ok: false, error: "Préqualification introuvable." };
+  pqSetStatus_(found, "En attente assureur", user, "");
+  return { ok: true };
+}
+function rhMarkPreapproved(token) {
+  var user = requireRH_();
+  var found = pqFindByToken_(token);
+  if (!found) return { ok: false, error: "Préqualification introuvable." };
+  pqSet_(found, "Décision RH", "Préapprouvé");
+  pqSet_(found, "Date décision", new Date());
+  pqSetStatus_(found, "Préapprouvé", user, "");
+  return { ok: true };
+}
+function rhMarkInsuranceRefused(token, motif) {
+  var user = requireRH_();
+  var found = pqFindByToken_(token);
+  if (!found) return { ok: false, error: "Préqualification introuvable." };
+  var rec = pqObj_(found);
+  pqSet_(found, "Décision RH", "Non retenu (admissibilité / assurabilité)" + (motif ? " — " + motif : ""));
+  pqSet_(found, "Date décision", new Date());
+  pqSetStatus_(found, "Refus assurance", user, motif || "");
+  try { sendPrequalRefusalEmail_(rec); } catch (e) { logError_(e, null, "sendPrequalRefusalEmail_"); }
+  return { ok: true };
+}
+
+/** Crée l'invitation d'embauche complète en réutilisant les données, lie les deux tokens, envoie le lien au candidat. */
+function rhSendFullHiringInvitationFromPrequalification(token) {
+  var user = requireRH_();
+  var found = pqFindByToken_(token);
+  if (!found) return { ok: false, error: "Préqualification introuvable." };
+  var rec = pqObj_(found);
+  var poste = (rec["Poste visé"] || "").toLowerCase();
+  var assuranceRequise = poste.indexOf("chauffeur") >= 0 || (rec["Classe permis"] || "") !== "";
+  var res = rhCreateInvitation({
+    prenom: rec["Prénom"], nom: rec["Nom"], courriel: rec["Courriel"], telephone: rec["Téléphone"],
+    compagnie: rec["Compagnie visée"], poste: rec["Poste visé"], gestionnaire: rec["Gestionnaire"],
+    assuranceRequise: assuranceRequise, envoyerCourriel: false,
+    notes: "Issu de la préqualification " + rec["ID préqualification"] + " (préapprouvé le " +
+      Utilities.formatDate(new Date(), Session.getScriptTimeZone() || "America/Toronto", "yyyy-MM-dd") + ")."
+  });
+  if (!res || !res.ok) return { ok: false, error: (res && res.error) || "Échec de création de l'invitation d'embauche." };
+  pqSet_(found, "Invitation embauche liée", res.invitationId);
+  pqSet_(found, "Token embauche lié", res.token);
+  pqSet_(found, "Décision RH", "Préapprouvé — invitation embauche envoyée");
+  pqSet_(found, "Date décision", new Date());
+  pqSetStatus_(found, "Invitation embauche complète envoyée", user, "Invitation " + res.invitationId);
+  try { sendPrequalPreapprovedEmail_(rec, res.lien); }
+  catch (e) { logError_(e, null, "sendPrequalPreapprovedEmail_"); }
+  return { ok: true, invitationId: res.invitationId, token: res.token, lien: res.lien };
+}
+
+function rhRunPrequalificationAnalysis(token) {
+  var user = requireRH_();
+  var found = pqFindByToken_(token);
+  if (!found) return { ok: false, error: "Préqualification introuvable." };
+  var key = PropertiesService.getScriptProperties().getProperty("ANTHROPIC_API_KEY");
+  if (!key) return { ok: false, notConfigured: true, error: "Analyse IA non configurée (ANTHROPIC_API_KEY absente) — révision manuelle requise." };
+  pqSetStatus_(found, "Analyse IA en cours", user, "Analyse déclenchée par RH");
+  var res = analyzePrequalificationWithClaude_(token);
+  if (!res.ok) pqSetStatus_(found, "Analyse RH requise", user, "Analyse IA échouée — révision manuelle");
+  return res;
+}
+
+// ==================== COURRIELS ====================
+
+function pqEmailWrap_(bodyHtml) {
+  return "<div style='font-family:Arial;font-size:14px;color:#22252b;line-height:1.6'>" + bodyHtml +
+    "<p style='font-size:12px;color:#8b8880;margin-top:22px'>Confidentialité (Loi 25) : les renseignements recueillis se limitent à ce qui est nécessaire à l'évaluation de votre candidature et de son assurabilité, l'accès est réservé aux personnes autorisées, et la conservation suit la politique interne de Groupe WT Corporation.</p></div>";
+}
+function pqBtn_(lien, texte) {
+  return "<p style='margin:18px 0'><a href='" + lien + "' style='background:#d9682f;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:bold'>" + texte + "</a></p>" +
+    "<p style='font-size:12px;color:#666;word-break:break-all'>Ou copiez ce lien : " + lien + "</p>";
+}
+
+function sendPrequalInvitationEmail_(rec) {
+  if (!rec["Courriel"]) return;
+  var html = "<p>Bonjour " + (rec["Prénom"] || "") + ",</p>" +
+    "<p>Merci de votre intérêt envers Groupe WT Corporation" + (rec["Poste visé"] ? " pour le poste de « " + rec["Poste visé"] + " »" : "") + ".</p>" +
+    "<p>Avant de compléter un dossier d'embauche complet, nous procédons à une courte <b>préqualification</b> de votre candidature. Merci de remplir le formulaire ci-dessous et de préparer les documents suivants :</p>" +
+    "<ul><li>Curriculum vitæ (CV)</li><li>Dossier de conduite (si applicable)</li><li>Permis de conduire (si applicable)</li></ul>" +
+    pqBtn_(rec["Lien formulaire préqualification"], "Compléter ma préqualification") +
+    "<p><i>Cette préqualification ne constitue pas une promesse d'embauche.</i></p>" +
+    "<p>L'équipe RH<br>Groupe WT Corporation</p>";
+  MailApp.sendEmail({ to: rec["Courriel"], subject: "Préqualification de votre candidature — Groupe WT Corporation", htmlBody: pqEmailWrap_(html) });
+}
+
+function sendPrequalIncompleteEmail_(rec, message) {
+  if (!rec["Courriel"]) return;
+  var html = "<p>Bonjour " + (rec["Prénom"] || "") + ",</p>" +
+    "<p>Afin de poursuivre l'analyse de votre préqualification, il nous manque certains éléments :</p>" +
+    "<div style='background:#fdf4ec;border:1px solid #f4dcc7;border-radius:8px;padding:10px 14px;white-space:pre-wrap'>" +
+    String(message || "").replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }) + "</div>" +
+    pqBtn_(rec["Lien formulaire préqualification"], "Compléter mon dossier") +
+    "<p>Pour toute question, écrivez-nous à " + RH_EMAIL + ".</p>" +
+    "<p>L'équipe RH<br>Groupe WT Corporation</p>";
+  MailApp.sendEmail({ to: rec["Courriel"], subject: "Information manquante pour votre préqualification", htmlBody: pqEmailWrap_(html) });
+}
+
+function sendPrequalPreapprovedEmail_(rec, fullLink) {
+  if (!rec["Courriel"]) return;
+  var html = "<p>Bonjour " + (rec["Prénom"] || "") + ",</p>" +
+    "<p>Bonne nouvelle : votre préqualification est complétée et la prochaine étape de votre candidature est prête.</p>" +
+    "<p>Nous vous invitons à compléter le <b>formulaire d'embauche officiel</b> afin de finaliser votre dossier.</p>" +
+    pqBtn_(fullLink, "Compléter mon formulaire d'embauche") +
+    "<p>L'équipe RH<br>Groupe WT Corporation</p>";
+  MailApp.sendEmail({ to: rec["Courriel"], subject: "Prochaine étape de votre candidature — Groupe WT Corporation", htmlBody: pqEmailWrap_(html) });
+}
+
+function sendPrequalRefusalEmail_(rec) {
+  if (!rec["Courriel"]) return;
+  var html = "<p>Bonjour " + (rec["Prénom"] || "") + ",</p>" +
+    "<p>Nous vous remercions de l'intérêt que vous portez à Groupe WT Corporation et du temps consacré à votre candidature.</p>" +
+    "<p>Après analyse, nous ne sommes pas en mesure de donner suite à votre candidature pour ce poste, selon les critères d'admissibilité et d'assurabilité applicables.</p>" +
+    "<p>Nous conservons votre dossier et vous invitons à surveiller nos futures opportunités.</p>" +
+    "<p>Nous vous souhaitons beaucoup de succès dans vos démarches.</p>" +
+    "<p>L'équipe RH<br>Groupe WT Corporation</p>";
+  MailApp.sendEmail({ to: rec["Courriel"], subject: "Suivi de votre candidature — Groupe WT Corporation", htmlBody: pqEmailWrap_(html) });
+}
+
+function notifyRHPrequalSubmitted_(rec, saved, manquants, folder) {
+  var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); };
+  var row = function (l, v) { return "<tr><td style='padding:5px 12px;color:#666;font-family:Arial;font-size:13px;white-space:nowrap'>" + esc(l) + "</td><td style='padding:5px 12px;font-family:Arial;font-size:13px'>" + (esc(v) || "&mdash;") + "</td></tr>"; };
+  var docsHtml = (saved && saved.length) ? "<ul style='font-family:Arial;font-size:13px'>" + saved.map(function (s) { return "<li>" + esc(s.categorie) + " — " + esc(s.nom) + "</li>"; }).join("") + "</ul>" : "<p style='font-family:Arial;font-size:13px;color:#666'>Aucun document téléversé.</p>";
+  var manqHtml = (manquants && manquants.length) ? "<p style='font-family:Arial;font-size:13px;color:#b26a29'><b>Éléments manquants :</b> " + esc(manquants.join(", ")) + "</p>" : "<p style='font-family:Arial;font-size:13px;color:#2f7d55'><b>Dossier complet.</b></p>";
+  var dashUrl = ScriptApp.getService().getUrl() + "?page=dashboard";
+  var html = "<h2 style='font-family:Arial'>Nouvelle préqualification reçue</h2>" +
+    "<table style='border-collapse:collapse;border:1px solid #eee'>" +
+    row("Candidat", rec.__nomComplet) + row("Poste visé", rec["Poste visé"]) + row("Compagnie", rec["Compagnie visée"]) +
+    row("Courriel", rec["Courriel"]) + row("Téléphone", rec["Téléphone"]) + row("Classe permis", rec["Classe permis"]) +
+    row("Statut", rec["Statut préqualification"]) + row("ID", rec["ID préqualification"]) + "</table>" +
+    "<h3 style='font-family:Arial;margin-bottom:2px'>Documents reçus</h3>" + docsHtml + manqHtml +
+    (folder ? "<p style='font-family:Arial;font-size:14px'><a href='" + folder.getUrl() + "' style='background:#d9682f;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;font-weight:bold'>📁 Ouvrir le dossier Drive</a> &nbsp; <a href='" + dashUrl + "'>Ouvrir le portail RH</a></p>" : "");
+  MailApp.sendEmail({ to: RH_EMAIL, subject: "Préqualification reçue — " + rec.__nomComplet, htmlBody: html });
+}
+
+// ==================== RAPPELS AUTOMATIQUES ====================
+
+function pqHoursSince_(d) {
+  if (!d) return 0;
+  var t = (d instanceof Date) ? d.getTime() : new Date(d).getTime();
+  if (!t) return 0;
+  return (new Date().getTime() - t) / 3600000;
+}
+
+/**
+ * Rappels selon l'ancienneté sans activité. Anti-doublon via l'onglet prequalification_reminders
+ * (un rappel d'un type donné n'est renvoyé que si aucun n'a été envoyé depuis la dernière activité).
+ * À planifier via installPrequalificationReminderTrigger_() (déclencheur horaire).
+ */
+function processPrequalificationReminders_() {
+  var sheet = pqSheet_(SHEET_PREQUAL, COLS_PREQUAL);
+  var map = headerMap_(sheet);
+  var vals = sheet.getDataRange().getValues();
+  var remSheet = pqSheet_(SHEET_PREQUAL_REMINDERS, COLS_PREQUAL_REMINDERS);
+  var rmap = headerMap_(remSheet);
+  var remVals = remSheet.getDataRange().getValues();
+
+  function alreadySentSince(id, type, sinceMs) {
+    for (var r = 1; r < remVals.length; r++) {
+      if (String(remVals[r][rmap["ID préqualification"]]) === String(id) && String(remVals[r][rmap["Type rappel"]]) === type) {
+        var d = remVals[r][rmap["Date envoi"]];
+        var t = (d instanceof Date) ? d.getTime() : new Date(d).getTime();
+        if (t >= sinceMs) return true;
+      }
+    }
+    return false;
+  }
+  function logReminder(id, token, type, dest, detail) {
+    remSheet.appendRow(buildRow_(COLS_PREQUAL_REMINDERS, { "Date envoi": new Date(), "ID préqualification": id, "Token": token, "Type rappel": type, "Destinataire": dest, "Détail": detail || "" }));
+  }
+
+  var envoyes = 0;
+  for (var i = 1; i < vals.length; i++) {
+    var row = vals[i];
+    if (!row[map["ID préqualification"]]) continue;
+    var rec = {}; for (var k in map) rec[k] = dcStr_(row[map[k]]);
+    rec.__nomComplet = ((rec["Prénom"] || "") + " " + (rec["Nom"] || "")).trim();
+    var id = rec["ID préqualification"], token = rec["Token"], statut = rec["Statut préqualification"];
+    var lastRaw = row[map["Dernière activité"]];
+    var age = pqHoursSince_(lastRaw);
+    var lastMs = (lastRaw instanceof Date) ? lastRaw.getTime() : (new Date(lastRaw).getTime() || 0);
+
+    try {
+      if (statut === "Préqualification envoyée" && age >= 24 && !alreadySentSince(id, "candidat-non-ouvert", lastMs)) {
+        sendPrequalInvitationEmail_(rec); logReminder(id, token, "candidat-non-ouvert", "candidat", "Rappel : lien non ouvert après 24 h"); envoyes++;
+      } else if ((statut === "Lien ouvert" || statut === "Préqualification commencée" || statut === "Documents partiellement reçus") && age >= 48 && !alreadySentSince(id, "candidat-non-soumis", lastMs)) {
+        sendPrequalInvitationEmail_(rec); logReminder(id, token, "candidat-non-soumis", "candidat", "Rappel : préqualification non soumise après 48 h"); envoyes++;
+      } else if (statut === "Dossier incomplet" && age >= 48 && !alreadySentSince(id, "candidat-incomplet", lastMs)) {
+        sendPrequalIncompleteEmail_(rec, rec["Bloqué (raison)"] || "Merci de compléter les documents manquants."); logReminder(id, token, "candidat-incomplet", "candidat", "Rappel : dossier incomplet après 48 h"); envoyes++;
+      } else if (statut === "Correction demandée" && age >= 48 && !alreadySentSince(id, "candidat-correction", lastMs)) {
+        sendPrequalIncompleteEmail_(rec, "Une correction a été demandée sur votre dossier de préqualification."); logReminder(id, token, "candidat-correction", "candidat", "Rappel : correction demandée après 48 h"); envoyes++;
+      } else if (statut === "Analyse RH requise" && age >= 24 && !alreadySentSince(id, "rh-a-reviser", lastMs)) {
+        MailApp.sendEmail({ to: RH_EMAIL, subject: "Rappel RH — préqualification à réviser : " + rec.__nomComplet, htmlBody: "<p>La préqualification <b>" + rec.__nomComplet + "</b> (" + id + ") attend une révision RH depuis plus de 24 h.</p>" });
+        logReminder(id, token, "rh-a-reviser", "RH", "Rappel : analyse RH requise depuis 24 h"); envoyes++;
+      } else if (statut === "En attente assureur" && age >= 48 && !alreadySentSince(id, "rh-attente-assureur", lastMs)) {
+        MailApp.sendEmail({ to: RH_EMAIL, subject: "Rappel RH — en attente assureur : " + rec.__nomComplet, htmlBody: "<p>La préqualification <b>" + rec.__nomComplet + "</b> (" + id + ") est en attente de l'assureur depuis plus de 48 h.</p>" });
+        logReminder(id, token, "rh-attente-assureur", "RH", "Rappel : en attente assureur depuis 48 h"); envoyes++;
+      }
+    } catch (e) { logError_(e, null, "processPrequalificationReminders_ " + id); }
+  }
+  return { ok: true, rappelsEnvoyes: envoyes };
+}
+
+/** RH — installe un déclencheur horaire (toutes les 6 h) pour les rappels de préqualification (idempotent). */
+function installPrequalificationReminderTrigger_() {
+  var exists = ScriptApp.getProjectTriggers().some(function (t) { return t.getHandlerFunction() === "processPrequalificationReminders_"; });
+  if (!exists) ScriptApp.newTrigger("processPrequalificationReminders_").timeBased().everyHours(6).create();
+  return { ok: true, installed: !exists };
+}
+
+// ==================== SETUP / MIGRATION ====================
+
+/** Crée/complète les onglets du module (idempotent, sans supprimer de colonnes existantes). */
+function setupPrequalificationSheets_() {
+  pqSheet_(SHEET_PREQUAL, COLS_PREQUAL);
+  pqSheet_(SHEET_PREQUAL_DOCS, COLS_PREQUAL_DOCS);
+  pqSheet_(SHEET_PREQUAL_ANALYSIS, COLS_PREQUAL_ANALYSIS);
+  pqSheet_(SHEET_PREQUAL_CORR, COLS_PREQUAL_CORR);
+  pqSheet_(SHEET_PREQUAL_REMINDERS, COLS_PREQUAL_REMINDERS);
+  return true;
+}
+
+/** RH — met en place le module de préqualification (onglets + déclencheur de rappels). Exécutable plusieurs fois. */
+function rhSetupPrequalificationModule() {
+  var user = requireRH_();
+  setupPrequalificationSheets_();
+  var trig = { installed: false };
+  try { trig = installPrequalificationReminderTrigger_(); } catch (e) { logError_(e, null, "installPrequalificationReminderTrigger_"); }
+  var iaConfiguree = !!PropertiesService.getScriptProperties().getProperty("ANTHROPIC_API_KEY");
+  return {
+    ok: true, par: user,
+    onglets: [SHEET_PREQUAL, SHEET_PREQUAL_DOCS, SHEET_PREQUAL_ANALYSIS, SHEET_PREQUAL_CORR, SHEET_PREQUAL_REMINDERS],
+    rappelsInstalles: trig.installed, iaConfiguree: iaConfiguree
+  };
 }

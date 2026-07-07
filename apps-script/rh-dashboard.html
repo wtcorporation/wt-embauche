@@ -180,11 +180,84 @@
       </table>
     </div>
   </section>
+
+  <!-- ================= PRÉQUALIFICATION CANDIDATS ================= -->
+  <section class="card">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+      <h2 style="margin:0">Préqualification candidats</h2>
+      <span class="tag green" id="pqIaBadge" style="display:none">🤖 Analyse IA active</span>
+      <span class="tag" id="pqIaBadgeOff" style="display:none">Analyse IA non configurée — révision manuelle</span>
+      <button class="btn sm sec" onclick="pqSetup()" style="margin-left:auto">⚙️ Configurer le module</button>
+      <button class="btn sm sec" onclick="loadPrequal()">↻ Actualiser</button>
+    </div>
+
+    <details id="pqCreateWrap" style="margin-bottom:16px;border:1px solid #e6ecf6;border-radius:12px;padding:12px 14px;background:#fbfcfe">
+      <summary style="cursor:pointer;font-weight:700;color:#2a5db0">+ Nouvelle préqualification candidat</summary>
+      <div id="pqCreateMsg" class="msg" style="margin-top:12px"></div>
+      <div class="grid" style="margin-top:12px">
+        <div><label>Prénom *</label><input id="pqPrenom" type="text"></div>
+        <div><label>Nom *</label><input id="pqNom" type="text"></div>
+        <div><label>Courriel</label><input id="pqCourriel" type="email" placeholder="candidat@exemple.com"></div>
+        <div><label>Téléphone</label><input id="pqTelephone" type="tel"></div>
+        <div>
+          <label>Compagnie visée</label>
+          <select id="pqCompagnie">
+            <option value="">Choisir…</option>
+            <option>Groupe WT Corporation</option>
+            <option>Remorquage PDR 2011 inc.</option>
+            <option>Livraison Primus inc.</option>
+            <option>Remorquage Bean &amp; Fille</option>
+            <option>Remorquage Axis</option>
+          </select>
+        </div>
+        <div><label>Poste visé</label><input id="pqPoste" type="text" placeholder="Ex. Chauffeur plateforme"></div>
+        <div><label>Gestionnaire / recruteur</label><input id="pqGestionnaire" type="text"></div>
+        <div><label>Classe de permis (indicatif)</label><input id="pqClasse" type="text" placeholder="Ex. Classe 5"></div>
+      </div>
+      <div style="margin-top:12px"><label>Notes internes RH (non visibles par le candidat)</label><textarea id="pqNotes"></textarea></div>
+      <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+        <label class="chk"><input id="pqEnvoyer" type="checkbox" checked> Envoyer le courriel d'invitation maintenant</label>
+        <button class="btn" id="pqBtnCreate" onclick="pqCreate()">Créer la préqualification</button>
+      </div>
+      <div id="pqResult" class="result">
+        <div style="font-weight:800;color:#2a5db0;margin-bottom:6px">✓ Préqualification créée</div>
+        <label>Lien de préqualification (candidat)</label><code id="pqRLink"></code>
+        <label>Message SMS (prêt à copier)</label><code id="pqRSms"></code>
+        <div class="row-actions">
+          <button class="btn sm" onclick="copyText(document.getElementById('pqRLink').textContent, this)">Copier le lien</button>
+          <button class="btn sm sec" onclick="copyText(document.getElementById('pqRSms').textContent, this)">Copier le SMS</button>
+          <a class="btn sm sec" id="pqRDrive" href="#" target="_blank" style="text-decoration:none">📁 Dossier Drive</a>
+        </div>
+      </div>
+    </details>
+
+    <div class="toolbar">
+      <input id="pqSearch" type="search" placeholder="🔍 Rechercher (nom, courriel, poste…)" oninput="renderPrequal()">
+      <select id="pqFilterStatut" onchange="renderPrequal()"><option value="">Tous les statuts</option></select>
+      <select id="pqFilterNiveau" onchange="renderPrequal()"><option value="">Tous les niveaux</option></select>
+      <span id="pqCount" class="muted" style="font-size:12.5px"></span>
+    </div>
+    <div id="pqListMsg" class="spin">Chargement…</div>
+    <div class="tablewrap">
+      <table id="pqTbl" style="display:none">
+        <thead><tr>
+          <th>Candidat</th><th>Compagnie / Poste</th><th>Permis / Exp.</th><th>Docs</th>
+          <th>Niveau</th><th>Statut</th><th>Prochaine action</th><th>Activité</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="pqTbody"></tbody>
+      </table>
+    </div>
+  </section>
 </div>
 
-<!-- Modal détail -->
+<!-- Modal détail (embauche) -->
 <div id="overlay" class="overlay" onclick="if(event.target===this)closeDetail()">
   <div class="modal" id="modal"></div>
+</div>
+
+<!-- Modal détail (préqualification) -->
+<div id="pqOverlay" class="overlay" onclick="if(event.target===this)pqCloseDetail()">
+  <div class="modal" id="pqModal"></div>
 </div>
 
 <script>
@@ -207,6 +280,7 @@
       document.getElementById('app').style.display='block';
       document.getElementById('who').textContent='Connecté : '+res.email;
       loadList();
+      loadPrequal();
     } else {
       document.getElementById('gateTitle').textContent='Accès refusé';
       document.getElementById('gateMsg').textContent=(res && res.error) || "Vous n'êtes pas autorisé à accéder à ce portail.";
@@ -468,6 +542,243 @@
   function copyText(txt, btn){
     var done=function(){ var t=btn.textContent; btn.textContent='✓ Copié'; setTimeout(function(){ btn.textContent=t; },1500); };
     try{ navigator.clipboard.writeText(txt).then(done, done); }catch(e){ done(); }
+  }
+
+  // ================== MODULE PRÉQUALIFICATION ==================
+  var PQ_ALL=[], PQ_STATUTS=[], PQ_NIVEAUX=[], PQ_CURRENT=null;
+
+  function pqSetup(){
+    if(!confirm("Créer / mettre à jour les onglets de préqualification et installer les rappels automatiques ?\n\n(Sans risque : ne supprime aucune donnée existante.)")) return;
+    google.script.run
+      .withSuccessHandler(function(res){
+        if(res&&res.ok){
+          alert('Module de préqualification prêt.\nOnglets : '+(res.onglets||[]).join(', ')+'\nRappels installés : '+(res.rappelsInstalles?'oui':'déjà présents')+'\nAnalyse IA : '+(res.iaConfiguree?'configurée':'non configurée (révision manuelle)'));
+          loadPrequal();
+        } else alert((res&&res.error)||'Échec.');
+      })
+      .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); })
+      .rhSetupPrequalificationModule();
+  }
+
+  function pqCreate(){
+    var payload={
+      prenom: val0('pqPrenom'), nom: val0('pqNom'), courriel: val0('pqCourriel'), telephone: val0('pqTelephone'),
+      compagnie: document.getElementById('pqCompagnie').value, poste: val0('pqPoste'),
+      gestionnaire: val0('pqGestionnaire'), classePermis: val0('pqClasse'), notes: val0('pqNotes'),
+      envoyerCourriel: document.getElementById('pqEnvoyer').checked
+    };
+    if(!payload.prenom || !payload.nom){ show('pqCreateMsg','err','Le prénom et le nom sont requis.'); return; }
+    var btn=document.getElementById('pqBtnCreate'); btn.disabled=true; btn.textContent='Création…';
+    document.getElementById('pqCreateMsg').style.display='none';
+    google.script.run
+      .withSuccessHandler(function(res){
+        btn.disabled=false; btn.textContent='Créer la préqualification';
+        if(!res||!res.ok){ show('pqCreateMsg','err',(res&&res.error)||'Échec de la création.'); return; }
+        show('pqCreateMsg','ok','Préqualification '+res.id+' créée'+(res.courrielEnvoye?' et courriel envoyé.':'.'));
+        document.getElementById('pqRLink').textContent=res.lien;
+        document.getElementById('pqRSms').textContent=res.sms;
+        document.getElementById('pqRDrive').href=res.lienDrive||'#';
+        document.getElementById('pqResult').style.display='block';
+        pqClearForm(); loadPrequal();
+      })
+      .withFailureHandler(function(e){ btn.disabled=false; btn.textContent='Créer la préqualification'; show('pqCreateMsg','err',String(e&&e.message?e.message:e)); })
+      .rhCreatePrequalification(payload);
+  }
+  function val0(id){ var el=document.getElementById(id); return el?el.value.trim():''; }
+  function pqClearForm(){
+    ['pqPrenom','pqNom','pqCourriel','pqTelephone','pqPoste','pqGestionnaire','pqClasse','pqNotes'].forEach(function(id){ document.getElementById(id).value=''; });
+    document.getElementById('pqCompagnie').value='';
+  }
+
+  function loadPrequal(){
+    document.getElementById('pqListMsg').style.display='block';
+    document.getElementById('pqListMsg').textContent='Chargement…';
+    document.getElementById('pqTbl').style.display='none';
+    google.script.run
+      .withSuccessHandler(function(res){
+        if(res===null||res===undefined){ document.getElementById('pqListMsg').textContent='Réponse vide (redéployez le portail RH en nouvelle version).'; return; }
+        if(!res.ok){ document.getElementById('pqListMsg').textContent='Erreur : '+(res.error||JSON.stringify(res)); return; }
+        PQ_ALL=res.prequalifications||[]; PQ_STATUTS=res.statuts||[]; PQ_NIVEAUX=res.niveaux||[];
+        document.getElementById('pqIaBadge').style.display = res.iaConfiguree ? '' : 'none';
+        document.getElementById('pqIaBadgeOff').style.display = res.iaConfiguree ? 'none' : '';
+        var fs=document.getElementById('pqFilterStatut');
+        if(fs.options.length<=1){ PQ_STATUTS.forEach(function(s){ var o=document.createElement('option'); o.value=s; o.textContent=s; fs.appendChild(o); }); }
+        var fn=document.getElementById('pqFilterNiveau');
+        if(fn.options.length<=1){ PQ_NIVEAUX.forEach(function(n){ var o=document.createElement('option'); o.value=n; o.textContent=n; fn.appendChild(o); }); }
+        renderPrequal();
+      })
+      .withFailureHandler(function(err){ document.getElementById('pqListMsg').textContent='Échec serveur : '+(err && err.message ? err.message : err); })
+      .rhListPrequalifications();
+  }
+
+  function pqNiveauBadge(n){
+    if(n==='Vert') return '<span class="tag green">🟢 Vert</span>';
+    if(n==='Jaune') return '<span class="tag orange">🟡 Jaune</span>';
+    if(n==='Rouge') return '<span class="tag red">🔴 Rouge</span>';
+    if(n==='Incomplet') return '<span class="tag">⚪ Incomplet</span>';
+    return '<span class="tag">—</span>';
+  }
+  function pqDocsBadge(p){
+    var parts=[];
+    parts.push(p.cvFourni==='Oui'?'<span class="tag green" style="padding:2px 7px">CV</span>':'<span class="tag" style="padding:2px 7px">CV</span>');
+    parts.push(p.dossierFourni==='Oui'?'<span class="tag green" style="padding:2px 7px">Dossier</span>':'<span class="tag" style="padding:2px 7px">Dossier</span>');
+    parts.push(p.permisFourni==='Oui'?'<span class="tag green" style="padding:2px 7px">Permis</span>':'<span class="tag" style="padding:2px 7px">Permis</span>');
+    return '<div style="display:flex;gap:4px;flex-wrap:wrap">'+parts.join('')+'</div>';
+  }
+
+  function renderPrequal(){
+    if(!PQ_ALL.length){ document.getElementById('pqListMsg').style.display='block'; document.getElementById('pqListMsg').textContent='Aucune préqualification pour l\'instant.'; document.getElementById('pqTbl').style.display='none'; document.getElementById('pqCount').textContent=''; return; }
+    var q=(document.getElementById('pqSearch').value||'').toLowerCase().trim();
+    var fstat=document.getElementById('pqFilterStatut').value;
+    var fniv=document.getElementById('pqFilterNiveau').value;
+    var rows=PQ_ALL.filter(function(p){
+      if(fstat && p.statut!==fstat) return false;
+      if(fniv && p.niveau!==fniv) return false;
+      if(q){ var hay=((p.prenom||'')+' '+(p.nom||'')+' '+(p.courriel||'')+' '+(p.poste||'')).toLowerCase(); if(hay.indexOf(q)<0) return false; }
+      return true;
+    });
+    rows.sort(function(a,b){ var ka=new Date(a.derniereActivite).getTime()||0, kb=new Date(b.derniereActivite).getTime()||0; return kb-ka; });
+    var tb=document.getElementById('pqTbody'); tb.innerHTML='';
+    rows.forEach(function(p){
+      var tr=document.createElement('tr');
+      tr.innerHTML =
+        '<td><strong>'+esc(p.nom)+' '+esc(p.prenom)+'</strong><br><span class="muted" style="font-size:11.5px">'+esc(p.id)+'</span></td>'+
+        '<td>'+esc(p.compagnie||'—')+'<br><span class="muted">'+esc(p.poste||'')+'</span></td>'+
+        '<td>'+esc(p.classePermis||'—')+'<br><span class="muted">'+esc(p.anneesExp?(p.anneesExp+' an(s)'):'')+'</span></td>'+
+        '<td>'+pqDocsBadge(p)+'</td>'+
+        '<td>'+pqNiveauBadge(p.niveau)+'</td>'+
+        '<td><span class="tag">'+esc(p.statut||'—')+'</span></td>'+
+        '<td style="font-size:12px">'+esc(p.prochaineAction||'')+'<br><span class="muted">'+esc(p.assigneA||'')+'</span></td>'+
+        '<td>'+esc(fmt(p.derniereActivite))+'</td>'+
+        '<td><div class="row-actions">'+
+          '<button class="btn sm" onclick="pqOpenDetail(\''+esc(p.token)+'\')">Détail</button>'+
+          '<button class="btn sm sec" onclick="copyText(\''+esc(p.lienFormulaire)+'\', this)">Lien</button>'+
+        '</div></td>';
+      tb.appendChild(tr);
+    });
+    document.getElementById('pqListMsg').style.display = rows.length? 'none':'block';
+    if(!rows.length) document.getElementById('pqListMsg').textContent='Aucun résultat pour ce filtre.';
+    document.getElementById('pqTbl').style.display = rows.length? '':'none';
+    document.getElementById('pqCount').textContent = rows.length+' / '+PQ_ALL.length+' candidat(s)';
+  }
+
+  function pqOpenDetail(token){
+    document.getElementById('pqOverlay').classList.add('show');
+    document.getElementById('pqModal').innerHTML='<p class="spin">Chargement du dossier…</p>';
+    google.script.run
+      .withSuccessHandler(function(res){ if(!res||!res.ok){ document.getElementById('pqModal').innerHTML='<p class="msg err" style="display:block">'+esc((res&&res.error)||'Erreur')+'</p>'; return; } PQ_CURRENT=res; pqRenderDetail(res); })
+      .withFailureHandler(function(e){ document.getElementById('pqModal').innerHTML='<p class="msg err" style="display:block">'+esc(String(e&&e.message?e.message:e))+'</p>'; })
+      .rhGetPrequalification(token);
+  }
+  function pqCloseDetail(){ document.getElementById('pqOverlay').classList.remove('show'); }
+
+  function pqRenderDetail(res){
+    var d=res.dossier||{}, docs=res.documents||[], an=res.analyse, corr=res.corrections||[];
+    var tok=d['Token'];
+    var kv=function(l,v){ return '<div><div class="l">'+esc(l)+'</div><div class="v">'+(esc(v)||'—')+'</div></div>'; };
+    var driveMatch = String(d['Lien dossier Drive']||'');
+    var driveBtn = d['Lien dossier Drive'] ? '<a class="btn sm sec" target="_blank" style="text-decoration:none" href="'+esc((driveMatch.match(/https?:\/\/[^"\)]+/)||[''])[0])+'">📁 Dossier Drive</a>' : '';
+
+    var docsHtml = docs.length ? docs.map(function(it){
+      var link=(String(it.lien||'').match(/https?:\/\/[^"\)]+/)||[''])[0];
+      return '<div class="docrow"><span class="name">'+esc(it.type)+' <span class="muted">'+esc(it.nom||'')+'</span></span>'+
+        '<span class="tag">'+esc(it.statut||'Reçu')+'</span>'+
+        (link?'<a class="btn sm sec" target="_blank" style="text-decoration:none" href="'+esc(link)+'">Ouvrir</a>':'')+'</div>';
+    }).join('') : '<p class="muted">Aucun document reçu pour l\'instant.</p>';
+
+    var iaHtml;
+    if(an){
+      iaHtml =
+        '<div style="background:#f5f7fc;border:1px solid #dbe4f3;border-radius:12px;padding:14px;margin-top:8px">'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><b>Analyse IA (support — décision humaine requise)</b> '+pqNiveauBadge(an['Niveau de révision'])+'<span class="muted" style="margin-left:auto;font-size:11.5px">'+esc(an['Modèle utilisé']||'')+'</span></div>'+
+        '<div style="font-size:13px;line-height:1.5">'+
+          '<p style="margin:4px 0"><b>Résumé CV :</b> '+esc(an['Analyse CV']||'—')+'</p>'+
+          '<p style="margin:4px 0"><b>Expérience pertinente :</b> '+esc(an['Expérience pertinente']||'—')+'</p>'+
+          '<p style="margin:4px 0"><b>Classe permis détectée :</b> '+esc(an['Classe compatible']||'—')+' · <b>Permis valide :</b> '+esc(an['Permis valide']||'—')+'</p>'+
+          '<p style="margin:4px 0"><b>Dossier de conduite :</b> '+esc(an['Analyse dossier conduite']||'—')+'</p>'+
+          '<p style="margin:4px 0"><b>Infractions / points visibles :</b> '+esc(an['Points / infractions visibles']||'—')+'</p>'+
+          '<p style="margin:4px 0"><b>Suspensions visibles :</b> '+esc(an['Suspensions visibles']||'—')+'</p>'+
+          '<p style="margin:4px 0"><b>Éléments à valider :</b> '+esc(an['Éléments à vérifier']||'—')+'</p>'+
+          '<p style="margin:4px 0"><b>Recommandation :</b> '+esc(an['Recommandation']||'—')+'</p>'+
+          '<p style="margin:8px 0 0;color:#8a6d2f"><b>⚠️ Limites de l\'analyse :</b> '+esc(an['Limites de l\'analyse']||'—')+'</p>'+
+        '</div></div>';
+    } else if(res.iaConfiguree){
+      iaHtml = '<p class="muted">Aucune analyse IA encore générée. <button class="btn sm" onclick="pqRunAnalysis(\''+esc(tok)+'\')">🤖 Lancer l\'analyse IA</button></p>';
+    } else {
+      iaHtml = '<p class="muted">Analyse IA non configurée (ANTHROPIC_API_KEY absente) — révision manuelle requise.</p>';
+    }
+
+    var corrHtml = corr.length ? ('<ul style="font-size:12.5px;color:#6b6f77;margin:6px 0">'+corr.map(function(c){ return '<li>'+esc(fmt(c.date))+' — '+esc(c.demande)+' ('+esc(c.statut)+')</li>'; }).join('')+'</ul>') : '';
+
+    document.getElementById('pqModal').innerHTML =
+      '<div style="display:flex;align-items:center;gap:10px"><h2>'+esc(d['Nom'])+' '+esc(d['Prénom'])+'</h2><button class="close" onclick="pqCloseDetail()">✕</button></div>'+
+      '<div class="muted" style="font-size:12.5px">'+esc(d['ID préqualification'])+' · '+esc(d['Statut préqualification'])+' · '+esc(d['% complétion']||'')+' · Prochaine action : '+esc(d['Prochaine action requise']||'—')+'</div>'+
+      '<div class="kv">'+kv('Courriel',d['Courriel'])+kv('Téléphone',d['Téléphone'])+kv('Compagnie',d['Compagnie visée'])+kv('Poste',d['Poste visé'])+kv('Classe permis',d['Classe permis'])+kv('Expiration permis',d['Expiration permis'])+kv('Exp. conduite',d['Années expérience conduite'])+kv('Gestionnaire',d['Gestionnaire'])+'</div>'+
+      '<div class="row-actions" style="margin-bottom:6px">'+driveBtn+'<button class="btn sm sec" onclick="copyText(\''+esc(d['Lien formulaire préqualification'])+'\', this)">Copier le lien candidat</button>'+(res.iaConfiguree?'<button class="btn sm sec" onclick="pqRunAnalysis(\''+esc(tok)+'\')">🤖 (Re)lancer l\'analyse IA</button>':'')+'</div>'+
+      '<div style="font-size:12px;color:#6b6f77;margin-bottom:6px">🛡️ Déclarations candidat — Accidents : '+esc(d['Accidents déclarés']||'aucun')+' · Suspensions : '+esc(d['Suspensions déclarées']||'aucune')+' · Consentements : exactitude '+esc(d['Consentement exactitude']||'—')+', analyse '+esc(d['Consentement analyse']||'—')+', assureur '+esc(d['Consentement assureur']||'—')+'</div>'+
+
+      '<h3 style="margin:16px 0 4px">Analyse</h3>'+iaHtml+
+
+      '<h3 style="margin:18px 0 4px">Documents reçus</h3>'+docsHtml+
+
+      '<h3 style="margin:18px 0 4px">Notes internes</h3><pre class="notes">'+(esc(d['Notes internes'])||'(aucune)')+'</pre>'+corrHtml+
+      '<div style="display:flex;gap:8px;margin-top:8px"><input id="pqNewNote" placeholder="Ajouter une note interne…"><button class="btn sm sec" onclick="pqAddNote(\''+esc(tok)+'\')">Ajouter</button></div>'+
+
+      '<h3 style="margin:20px 0 6px">Demander une correction au candidat</h3>'+
+      '<div style="display:flex;gap:8px"><input id="pqCorrMsg" placeholder="Ex. Dossier de conduite manquant ou illisible"><button class="btn sm warn" onclick="pqRequestCorrection(\''+esc(tok)+'\')">Demander</button></div>'+
+
+      '<h3 style="margin:20px 0 6px">Décision RH</h3>'+
+      '<div class="row-actions">'+
+        '<button class="btn sm sec" onclick="pqMark(\''+esc(tok)+'\',\'insurance\')">→ À transmettre assureur</button>'+
+        '<button class="btn sm sec" onclick="pqMark(\''+esc(tok)+'\',\'pending\')">⏳ En attente assureur</button>'+
+        '<button class="btn sm ok" onclick="pqMark(\''+esc(tok)+'\',\'preapprove\')">✓ Préapprouvé</button>'+
+        '<button class="btn sm warn" onclick="pqRefuse(\''+esc(tok)+'\')">✗ Refus assurance</button>'+
+      '</div>'+
+      '<div style="margin-top:12px;padding-top:12px;border-top:1px dashed #e4e1da">'+
+        (d['Token embauche lié'] ? '<span class="tag green">Invitation embauche liée : '+esc(d['Invitation embauche liée'])+'</span>' :
+          '<button class="btn" onclick="pqSendFull(\''+esc(tok)+'\')">📨 Envoyer le formulaire d\'embauche complet</button>')+
+        '<span id="pqActMsg" class="muted" style="font-size:12.5px;margin-left:10px"></span>'+
+      '</div>';
+  }
+
+  function pqReopen(token, msg){ pqActBusy(msg); pqOpenDetail(token); loadPrequal(); }
+  function pqActBusy(msg){ var m=document.getElementById('pqActMsg'); if(m) m.textContent=msg||''; }
+
+  function pqRunAnalysis(token){
+    var el=document.getElementById('pqModal'); pqActBusy('Analyse IA en cours…');
+    google.script.run
+      .withSuccessHandler(function(res){ if(res&&res.ok){ pqOpenDetail(token); loadPrequal(); } else if(res&&res.notConfigured){ alert(res.error||'Analyse IA non configurée.'); } else { alert((res&&res.error)||'Échec de l\'analyse.'); pqActBusy(''); } })
+      .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); pqActBusy(''); })
+      .rhRunPrequalificationAnalysis(token);
+  }
+  function pqAddNote(token){
+    var v=document.getElementById('pqNewNote').value.trim(); if(!v) return;
+    google.script.run.withSuccessHandler(function(res){ if(res&&res.ok){ pqOpenDetail(token); } else alert((res&&res.error)||'Échec.'); })
+      .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); }).rhAddPrequalificationNote(token, v);
+  }
+  function pqRequestCorrection(token){
+    var v=document.getElementById('pqCorrMsg').value.trim(); if(!v){ alert('Précisez les éléments à corriger.'); return; }
+    google.script.run.withSuccessHandler(function(res){ if(res&&res.ok){ alert('Correction demandée — courriel envoyé au candidat.'); pqOpenDetail(token); loadPrequal(); } else alert((res&&res.error)||'Échec.'); })
+      .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); }).rhRequestPrequalificationCorrection(token, v);
+  }
+  function pqMark(token, kind){
+    var fn={ insurance:'rhMarkSendToInsurance', pending:'rhMarkInsurancePending', preapprove:'rhMarkPreapproved' }[kind];
+    if(!fn) return;
+    google.script.run.withSuccessHandler(function(res){ if(res&&res.ok){ pqOpenDetail(token); loadPrequal(); } else alert((res&&res.error)||'Échec.'); })
+      .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); })[fn](token);
+  }
+  function pqRefuse(token){
+    var motif=prompt("Motif interne (facultatif, non transmis au candidat) :","");
+    if(motif===null) return;
+    if(!confirm("Marquer ce candidat comme « Refus assurance » ? Un courriel de suivi neutre sera envoyé au candidat.")) return;
+    google.script.run.withSuccessHandler(function(res){ if(res&&res.ok){ pqOpenDetail(token); loadPrequal(); } else alert((res&&res.error)||'Échec.'); })
+      .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); }).rhMarkInsuranceRefused(token, motif||'');
+  }
+  function pqSendFull(token){
+    if(!confirm("Créer l'invitation d'embauche complète pour ce candidat préapprouvé et lui envoyer le lien ?")) return;
+    pqActBusy('Envoi de l\'invitation…');
+    google.script.run.withSuccessHandler(function(res){ if(res&&res.ok){ alert('Invitation d\'embauche '+res.invitationId+' créée et envoyée au candidat.'); pqCloseDetail(); loadPrequal(); loadList(); } else { alert((res&&res.error)||'Échec.'); pqActBusy(''); } })
+      .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); pqActBusy(''); }).rhSendFullHiringInvitationFromPrequalification(token);
   }
 </script>
 </body>

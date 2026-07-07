@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Préqualification — Groupe WT Corporation</title>
+<script src="./config.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700;800&amp;family=Nunito+Sans:opsz,wght@6..12,400;6..12,500;6..12,600;6..12,700&amp;display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box}
+    html,body{margin:0}
+    body{background:#f2efe8;font-family:'Nunito Sans',system-ui,sans-serif;color:#22252b;-webkit-font-smoothing:antialiased}
+    input,select,textarea{width:100%;padding:13px 15px;font-family:'Nunito Sans',system-ui,sans-serif;font-size:16px;color:#22252b;background:#fff;border:1.6px solid #e4e1da;border-radius:12px;outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none;appearance:none}
+    textarea{min-height:88px;resize:vertical;line-height:1.5}
+    input:focus,select:focus,textarea:focus{border-color:var(--accent,#d9682f);box-shadow:0 0 0 4px var(--accent-soft,#fdeadd)}
+    input::placeholder,textarea::placeholder{color:#a9a69d}
+    input[type=date]{min-height:49px}
+    select{background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' stroke='%236b6f77' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 15px center;background-size:12px;padding-right:40px;cursor:pointer}
+    label{display:block;font-family:'Figtree',sans-serif;font-weight:600;font-size:14.5px;color:#3a3e45;margin-bottom:7px}
+    input[type=checkbox]{-webkit-appearance:auto;appearance:auto;width:23px;height:23px;min-width:23px;padding:0;accent-color:var(--accent,#d9682f);cursor:pointer;box-shadow:none}
+    input[type=checkbox]:focus{box-shadow:0 0 0 4px var(--accent-soft,#fdeadd)}
+  </style>
+</helmet>
+<div style="--accent:{{ accentMain }};--accent-soft:{{ accentSoft }};min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:0 16px 48px">
+
+  <header style="width:100%;max-width:600px;display:flex;align-items:center;gap:14px;padding:20px 4px 18px">
+    <img src="assets/logo-wt.png" alt="WT Corporation" style="height:34px;width:auto;object-fit:contain">
+    <div style="width:1px;height:26px;background:#d6d2c9"></div>
+    <span style="font-family:'Figtree',sans-serif;font-weight:700;font-size:14px;color:#5c626b;letter-spacing:.2px">Groupe WT Corporation</span>
+  </header>
+
+  <main style="width:100%;max-width:600px;background:#fff;border:1px solid #eae7df;border-radius:22px;box-shadow:0 22px 60px -34px rgba(40,36,30,.5);overflow:hidden">
+
+    <sc-if value="{{ showProgress }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:20px 24px 0">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:9px">
+          <span style="font-family:'Figtree',sans-serif;font-weight:700;font-size:13px;color:var(--accent,#d9682f);text-transform:uppercase;letter-spacing:.6px">{{ stepLabel }}</span>
+          <span style="font-family:'Figtree',sans-serif;font-weight:600;font-size:13px;color:#8b8880">{{ stepTitle }}</span>
+        </div>
+        <div style="height:8px;background:#efece4;border-radius:99px;overflow:hidden">
+          <div style="height:100%;width:{{ progressPct }}%;background:var(--accent,#d9682f);border-radius:99px;transition:width .4s cubic-bezier(.4,0,.2,1)"></div>
+        </div>
+      </div>
+    </sc-if>
+
+    <div style="padding:26px 24px 8px">
+
+      <!-- INTRO -->
+      <sc-if value="{{ isStep0 }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="display:inline-flex;align-items:center;gap:7px;background:var(--accent-soft,#fdeadd);color:var(--accent,#d9682f);font-family:'Figtree',sans-serif;font-weight:700;font-size:12px;letter-spacing:.4px;text-transform:uppercase;padding:6px 11px;border-radius:99px;margin-bottom:16px">Préqualification de candidature</div>
+          <h1 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:26px;line-height:1.2;color:#22252b;margin:0 0 14px;text-wrap:balance">{{ hi }}</h1>
+          <p style="font-size:16.5px;line-height:1.6;color:#4a4f57;margin:0 0 18px">{{ intro }}</p>
+          <div style="display:flex;gap:12px;background:#f4f6fb;border:1px solid #d9e2f2;border-radius:14px;padding:14px 16px;margin-bottom:14px">
+            <span style="font-size:18px;line-height:1.3">📋</span>
+            <p style="margin:0;font-size:14px;line-height:1.55;color:#3a4a63">Préparez si possible : votre <b>CV</b>, votre <b>dossier de conduite</b> et votre <b>permis</b>. Vous pourrez les téléverser plus loin (photo claire ou PDF).</p>
+          </div>
+          <div style="display:flex;gap:12px;background:#fdf7ef;border:1px solid #f0e2cc;border-radius:14px;padding:14px 16px;margin-bottom:14px">
+            <span style="font-size:18px;line-height:1.3">ℹ️</span>
+            <p style="margin:0;font-size:13.5px;line-height:1.55;color:#7a5a2f">Cette préqualification <b>ne constitue pas une promesse d'embauche</b>. Elle nous aide à valider votre admissibilité avant l'étape du dossier complet.</p>
+          </div>
+          <p style="font-size:13.5px;color:#8b8880;margin:0 0 22px">⏱️ Environ 4 minutes · Les champs marqués <span style="color:var(--accent,#d9682f);font-weight:700">*</span> sont obligatoires.</p>
+          <button type="button" onClick="{{ start }}" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:16px 20px;font-family:'Figtree',sans-serif;font-weight:700;font-size:16.5px;color:#fff;background:var(--accent,#d9682f);border:none;border-radius:14px;cursor:pointer;box-shadow:0 10px 22px -10px var(--accent,#d9682f)">{{ startLabel }} <span style="font-size:18px">→</span></button>
+          <sc-if value="{{ hasProgress }}" hint-placeholder-val="">
+            <p style="text-align:center;margin:16px 0 0;font-size:13.5px;color:#9a968d">Une réponse en cours a été trouvée. <button type="button" onClick="{{ clearAll }}" style="border:none;background:none;color:var(--accent,#d9682f);font-family:inherit;font-size:13.5px;font-weight:700;text-decoration:underline;cursor:pointer;padding:0;width:auto">Recommencer à neuf</button></p>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- STEP 1 — IDENTITÉ -->
+      <sc-if value="{{ isStep1 }}" hint-placeholder-val="">
+        <div>
+          <p style="font-size:15px;color:#6b6f77;margin:0 0 22px;line-height:1.5">Vos coordonnées personnelles.</p>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:150px;margin-bottom:18px"><label>Prénom <span style="color:var(--accent)">*</span></label><input type="text" name="prenom" value="{{ f.prenom }}" onChange="{{ onField }}" placeholder="Ex. Marie"><sc-if value="{{ e.prenom }}" hint-placeholder-val=""><p style="margin:6px 0 0;font-size:13px;color:#c0392b">{{ e.prenom }}</p></sc-if></div>
+            <div style="flex:1;min-width:150px;margin-bottom:18px"><label>Nom <span style="color:var(--accent)">*</span></label><input type="text" name="nom" value="{{ f.nom }}" onChange="{{ onField }}" placeholder="Ex. Tremblay"><sc-if value="{{ e.nom }}" hint-placeholder-val=""><p style="margin:6px 0 0;font-size:13px;color:#c0392b">{{ e.nom }}</p></sc-if></div>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:150px;margin-bottom:18px"><label>Numéro de téléphone <span style="color:var(--accent)">*</span></label><input type="tel" name="telephone" value="{{ f.telephone }}" onChange="{{ onField }}" placeholder="(000) 000-0000"><sc-if value="{{ e.telephone }}" hint-placeholder-val=""><p style="margin:6px 0 0;font-size:13px;color:#c0392b">{{ e.telephone }}</p></sc-if></div>
+            <div style="flex:1;min-width:150px;margin-bottom:18px"><label>Courriel <span style="color:var(--accent)">*</span></label><input type="email" name="courriel" value="{{ f.courriel }}" onChange="{{ onField }}" placeholder="vous@exemple.com"><sc-if value="{{ e.courriel }}" hint-placeholder-val=""><p style="margin:6px 0 0;font-size:13px;color:#c0392b">{{ e.courriel }}</p></sc-if></div>
+          </div>
+          <div style="margin-bottom:18px"><label>Adresse</label><input type="text" name="adresse" value="{{ f.adresse }}" onChange="{{ onField }}" placeholder="Numéro et rue, app."></div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="flex:2;min-width:150px;margin-bottom:18px"><label>Ville</label><input type="text" name="ville" value="{{ f.ville }}" onChange="{{ onField }}"></div>
+            <div style="flex:1;min-width:120px;margin-bottom:18px"><label>Province</label><select name="province" value="{{ f.province }}" onChange="{{ onField }}"><option value="">Choisir…</option><option value="QC">Québec</option><option value="ON">Ontario</option><option value="NB">Nouveau-Brunswick</option><option value="NS">Nouvelle-Écosse</option><option value="PE">Île-du-Prince-Édouard</option><option value="NL">Terre-Neuve-et-Labrador</option><option value="MB">Manitoba</option><option value="SK">Saskatchewan</option><option value="AB">Alberta</option><option value="BC">Colombie-Britannique</option><option value="YT">Yukon</option><option value="NT">Territoires du Nord-Ouest</option><option value="NU">Nunavut</option></select></div>
+            <div style="flex:1;min-width:120px;margin-bottom:18px"><label>Code postal</label><input type="text" name="codePostal" value="{{ f.codePostal }}" onChange="{{ onField }}" placeholder="H0H 0H0"></div>
+          </div>
+          <div style="margin-bottom:6px"><label>Date de naissance</label><input type="date" name="dateNaissance" value="{{ f.dateNaissance }}" onChange="{{ onField }}"><p style="margin:6px 0 0;font-size:12.5px;color:#9a968d">Utilisée uniquement, s'il y a lieu, pour l'analyse d'assurabilité ou une exigence légale — jamais comme critère automatique.</p></div>
+        </div>
+      </sc-if>
+
+      <!-- STEP 2 — POSTE & CONDUITE -->
+      <sc-if value="{{ isStep2 }}" hint-placeholder-val="">
+        <div>
+          <p style="font-size:15px;color:#6b6f77;margin:0 0 22px;line-height:1.5">Le poste visé et votre expérience de conduite.</p>
+          <div style="margin-bottom:18px"><label>Compagnie visée <span style="color:var(--accent)">*</span></label><select name="compagnie" value="{{ f.compagnie }}" onChange="{{ onField }}"><option value="">Choisir…</option><option value="Groupe WT Corporation">Groupe WT Corporation</option><option value="Remorquage PDR 2011 inc.">Remorquage PDR 2011 inc.</option><option value="Livraison Primus inc.">Livraison Primus inc.</option><option value="Remorquage Bean &amp; Fille">Remorquage Bean &amp; Fille</option><option value="Remorquage Axis">Remorquage Axis</option><option value="Autre">Autre</option></select><sc-if value="{{ e.compagnie }}" hint-placeholder-val=""><p style="margin:6px 0 0;font-size:13px;color:#c0392b">{{ e.compagnie }}</p></sc-if></div>
+          <sc-if value="{{ showCompagnieAutre }}" hint-placeholder-val=""><div style="margin-bottom:18px"><label>Préciser la compagnie</label><input type="text" name="compagnieAutre" value="{{ f.compagnieAutre }}" onChange="{{ onField }}"></div></sc-if>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:150px;margin-bottom:18px"><label>Poste visé <span style="color:var(--accent)">*</span></label><input type="text" name="poste" value="{{ f.poste }}" onChange="{{ onField }}" placeholder="Ex. Chauffeur plateforme"><sc-if value="{{ e.poste }}" hint-placeholder-val=""><p style="margin:6px 0 0;font-size:13px;color:#c0392b">{{ e.poste }}</p></sc-if></div>
+            <div style="flex:1;min-width:150px;margin-bottom:18px"><label>Gestionnaire / recruteur (si connu)</label><input type="text" name="gestionnaire" value="{{ f.gestionnaire }}" onChange="{{ onField }}"></div>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:150px;margin-bottom:18px"><label>Classe de permis actuelle</label><select name="permisClasse" value="{{ f.permisClasse }}" onChange="{{ onField }}"><option value="">Choisir…</option><option value="Classe 5">Classe 5</option><option value="Classe 4A">Classe 4A</option><option value="Classe 4B">Classe 4B</option><option value="Classe 3">Classe 3</option><option value="Classe 1">Classe 1</option><option value="Aucun / autre">Aucun / autre</option></select></div>
+            <div style="flex:1;min-width:150px;margin-bottom:18px"><label>Date d'expiration du permis</label><input type="date" name="permisExpiration" value="{{ f.permisExpiration }}" onChange="{{ onField }}"></div>
+          </div>
+          <div style="margin-bottom:18px"><label>Années d'expérience de conduite</label><input type="number" min="0" name="anneesExperience" value="{{ f.anneesExperience }}" onChange="{{ onField }}" placeholder="Ex. 6"></div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:150px;margin-bottom:18px"><label>Expérience en remorquage</label><select name="expRemorquage" value="{{ f.expRemorquage }}" onChange="{{ onField }}"><option value="">Choisir…</option><option value="Aucune">Aucune</option><option value="Moins de 1 an">Moins de 1 an</option><option value="1 à 3 ans">1 à 3 ans</option><option value="3 à 5 ans">3 à 5 ans</option><option value="Plus de 5 ans">Plus de 5 ans</option></select></div>
+            <div style="flex:1;min-width:150px;margin-bottom:18px"><label>Expérience en transport</label><select name="expTransport" value="{{ f.expTransport }}" onChange="{{ onField }}"><option value="">Choisir…</option><option value="Aucune">Aucune</option><option value="Moins de 1 an">Moins de 1 an</option><option value="1 à 3 ans">1 à 3 ans</option><option value="3 à 5 ans">3 à 5 ans</option><option value="Plus de 5 ans">Plus de 5 ans</option></select></div>
+          </div>
+          <div style="margin-bottom:18px"><label>Expérience en livraison</label><select name="expLivraison" value="{{ f.expLivraison }}" onChange="{{ onField }}"><option value="">Choisir…</option><option value="Aucune">Aucune</option><option value="Moins de 1 an">Moins de 1 an</option><option value="1 à 3 ans">1 à 3 ans</option><option value="3 à 5 ans">3 à 5 ans</option><option value="Plus de 5 ans">Plus de 5 ans</option></select></div>
+          <div style="margin-bottom:18px"><label>Expérience similaire (décrivez librement)</label><textarea name="expSimilaire" value="{{ f.expSimilaire }}" onChange="{{ onField }}" placeholder="Types de véhicules, contextes, employeurs pertinents…"></textarea></div>
+          <div style="margin-bottom:18px"><label>Accidents ou incidents à déclarer volontairement</label><textarea name="accidents" value="{{ f.accidents }}" onChange="{{ onField }}" placeholder="Facultatif — aidez-nous à évaluer votre dossier correctement."></textarea></div>
+          <div style="margin-bottom:6px"><label>Suspensions ou restrictions connues à déclarer volontairement</label><textarea name="suspensions" value="{{ f.suspensions }}" onChange="{{ onField }}" placeholder="Facultatif."></textarea></div>
+        </div>
+      </sc-if>
+
+      <!-- STEP 3 — DOCUMENTS -->
+      <sc-if value="{{ isStep3 }}" hint-placeholder-val="">
+        <div>
+          <h2 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:20px;color:#22252b;margin:0 0 8px">Vos documents</h2>
+          <p style="font-size:15px;color:#6b6f77;margin:0 0 20px;line-height:1.55">Téléversez ce que vous avez sous la main. Vous pourrez compléter plus tard si un document vous manque — la RH vous le rappellera au besoin.</p>
+          <dc-import name="Televersement" title="Curriculum vitæ (CV)" hint="PDF ou photo claire" option-label="Recommandé" slot="cv" multiple="{{ false }}" files="{{ files_cv }}" error="{{ fileErr_cv }}" on-file="{{ onFile }}" on-remove="{{ onRemoveFile }}" hint-size="100%,150px"></dc-import>
+          <dc-import name="Televersement" title="Dossier de conduite" hint="Requis pour les postes de chauffeur" option-label="Si applicable" slot="dossierConduite" multiple="{{ false }}" files="{{ files_dossierConduite }}" error="{{ fileErr_dossierConduite }}" on-file="{{ onFile }}" on-remove="{{ onRemoveFile }}" hint-size="100%,150px"></dc-import>
+          <dc-import name="Televersement" title="Permis de conduire" hint="Recto (et verso si possible)" option-label="Si applicable" slot="permis" multiple="{{ true }}" files="{{ files_permis }}" error="{{ fileErr_permis }}" on-file="{{ onFile }}" on-remove="{{ onRemoveFile }}" hint-size="100%,150px"></dc-import>
+          <dc-import name="Televersement" title="Autre document pertinent" hint="Certifications, attestations, etc." option-label="Facultatif" slot="autre" multiple="{{ true }}" files="{{ files_autre }}" error="{{ fileErr_autre }}" on-file="{{ onFile }}" on-remove="{{ onRemoveFile }}" hint-size="100%,150px"></dc-import>
+        </div>
+      </sc-if>
+
+      <!-- STEP 4 — CONSENTEMENTS -->
+      <sc-if value="{{ isStep4 }}" hint-placeholder-val="">
+        <div>
+          <p style="font-size:15px;color:#6b6f77;margin:0 0 20px;line-height:1.5">Vos consentements avant l'envoi.</p>
+
+          <label style="display:flex;gap:12px;align-items:flex-start;background:#fbfaf7;border:1.6px solid #eae7df;border-radius:13px;padding:14px;margin-bottom:12px;font-weight:400;font-family:'Nunito Sans',sans-serif;font-size:14.5px;color:#3a3e45;cursor:pointer;line-height:1.5"><input type="checkbox" name="consentExactitude" checked="{{ f.consentExactitude }}" onChange="{{ onCheck }}"><span>Je confirme que les informations fournies sont <b>exactes et complètes</b>. <span style="color:var(--accent)">*</span></span></label>
+          <sc-if value="{{ e.consentExactitude }}" hint-placeholder-val=""><p style="margin:0 0 8px;font-size:13px;color:#c0392b">{{ e.consentExactitude }}</p></sc-if>
+
+          <label style="display:flex;gap:12px;align-items:flex-start;background:#fbfaf7;border:1.6px solid #eae7df;border-radius:13px;padding:14px;margin-bottom:12px;font-weight:400;font-family:'Nunito Sans',sans-serif;font-size:14.5px;color:#3a3e45;cursor:pointer;line-height:1.5"><input type="checkbox" name="consentAnalyse" checked="{{ f.consentAnalyse }}" onChange="{{ onCheck }}"><span>J'autorise Groupe WT Corporation et ses compagnies affiliées à <b>analyser les documents fournis</b> dans le cadre de ma candidature. <span style="color:var(--accent)">*</span></span></label>
+          <sc-if value="{{ e.consentAnalyse }}" hint-placeholder-val=""><p style="margin:0 0 8px;font-size:13px;color:#c0392b">{{ e.consentAnalyse }}</p></sc-if>
+
+          <label style="display:flex;gap:12px;align-items:flex-start;background:#fbfaf7;border:1.6px solid #eae7df;border-radius:13px;padding:14px;margin-bottom:12px;font-weight:400;font-family:'Nunito Sans',sans-serif;font-size:14.5px;color:#3a3e45;cursor:pointer;line-height:1.5"><input type="checkbox" name="consentAssureur" checked="{{ f.consentAssureur }}" onChange="{{ onCheck }}"><span>J'autorise, <b>si nécessaire</b>, la transmission des informations pertinentes à l'assureur de l'entreprise pour valider mon admissibilité / assurabilité. <span style="color:var(--accent)">*</span></span></label>
+          <sc-if value="{{ e.consentAssureur }}" hint-placeholder-val=""><p style="margin:0 0 8px;font-size:13px;color:#c0392b">{{ e.consentAssureur }}</p></sc-if>
+
+          <label style="display:flex;gap:12px;align-items:flex-start;background:#fbfaf7;border:1.6px solid #eae7df;border-radius:13px;padding:14px;margin-bottom:12px;font-weight:400;font-family:'Nunito Sans',sans-serif;font-size:14.5px;color:#3a3e45;cursor:pointer;line-height:1.5"><input type="checkbox" name="consentPrequalification" checked="{{ f.consentPrequalification }}" onChange="{{ onCheck }}"><span>Je comprends que cette préqualification <b>ne constitue pas une promesse d'embauche</b>. <span style="color:var(--accent)">*</span></span></label>
+          <sc-if value="{{ e.consentPrequalification }}" hint-placeholder-val=""><p style="margin:0 0 8px;font-size:13px;color:#c0392b">{{ e.consentPrequalification }}</p></sc-if>
+
+          <div style="background:#f4f7fb;border:1px solid #d9e2ef;border-radius:13px;padding:14px 16px;margin:16px 0 4px">
+            <p style="margin:0;font-size:13px;color:#4a5568;line-height:1.55">🔒 <b>Confidentialité (Loi 25).</b> Nous recueillons uniquement les renseignements nécessaires à l'évaluation de votre candidature et de son assurabilité. L'accès est réservé aux personnes autorisées et les documents sont conservés dans l'environnement Google Workspace sécurisé de l'entreprise, selon notre politique interne.</p>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- STEP 5 — ENVOI / CONFIRMATION -->
+      <sc-if value="{{ isStep5 }}" hint-placeholder-val="">
+        <div>
+          <sc-if value="{{ isSending }}" hint-placeholder-val="">
+            <div style="text-align:center;padding:34px 4px 30px">
+              <div style="width:74px;height:74px;border-radius:50%;background:#fdf4ec;border:2px solid #f4dcc7;display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 20px">⏳</div>
+              <h1 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:22px;color:#22252b;margin:0 0 10px">Envoi en cours…</h1>
+              <p style="font-size:15px;line-height:1.6;color:#4a4f57;margin:0 auto;max-width:420px">Vos informations et documents sont transmis au département RH. Ne fermez pas cette page.</p>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isSendError }}" hint-placeholder-val="">
+            <div style="text-align:center;padding:24px 4px 20px">
+              <div style="width:74px;height:74px;border-radius:50%;background:#fdecea;border:2px solid #f0c4be;display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 20px">⚠️</div>
+              <h1 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:22px;color:#22252b;margin:0 0 10px">L'envoi a échoué</h1>
+              <p style="font-size:15px;line-height:1.6;color:#b23b32;margin:0 auto 20px;max-width:440px">{{ sendError }}</p>
+              <button type="button" onClick="{{ retrySend }}" style="display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:15px 20px;font-family:'Figtree',sans-serif;font-weight:700;font-size:15.5px;color:#fff;background:var(--accent,#d9682f);border:none;border-radius:13px;cursor:pointer">↻ Réessayer l'envoi</button>
+              <p style="font-size:13px;color:#8b8880;margin:16px auto 0;max-width:420px">Vos réponses sont conservées sur cet appareil : rien n'est perdu. Si le problème persiste, contactez rh@wtcorporation.ca.</p>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isSent }}" hint-placeholder-val="">
+            <div style="text-align:center;padding:14px 4px 10px">
+              <div style="width:74px;height:74px;border-radius:50%;background:#eaf6ef;border:2px solid #c6e7d3;display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 20px">✅</div>
+              <h1 style="font-family:'Figtree',sans-serif;font-weight:800;font-size:24px;color:#22252b;margin:0 0 14px">Préqualification envoyée ✓</h1>
+              <p style="font-size:16px;line-height:1.6;color:#4a4f57;margin:0 auto 12px;max-width:460px">Merci ! Votre préqualification a été transmise au département RH. Nous analyserons votre dossier et communiquerons avec vous pour la suite.</p>
+              <sc-if value="{{ incompleteMsg }}" hint-placeholder-val="">
+                <div style="text-align:left;background:#fdf7ef;border:1px solid #f0e2cc;border-radius:13px;padding:14px 16px;margin:14px auto 0;max-width:460px">
+                  <p style="margin:0;font-size:14px;color:#7a5a2f;line-height:1.55">📎 Il pourrait manquer certains éléments : <b>{{ incompleteMsg }}</b>. Vous pouvez revenir à tout moment via votre lien pour les ajouter.</p>
+                </div>
+              </sc-if>
+              <p style="font-size:13px;color:#8b8880;margin:18px auto 0;max-width:440px"><i>Cette préqualification ne constitue pas une promesse d'embauche.</i></p>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+    </div>
+
+    <sc-if value="{{ showNav }}" hint-placeholder-val="">
+      <div style="display:flex;gap:12px;padding:14px 24px 22px;border-top:1px solid #f0ede6;background:#fff;position:sticky;bottom:0">
+        <sc-if value="{{ showPrev }}" hint-placeholder-val="{{ true }}">
+          <button type="button" onClick="{{ prev }}" style="flex:0 0 auto;padding:15px 22px;font-family:'Figtree',sans-serif;font-weight:700;font-size:15.5px;color:#4a4f57;background:#fff;border:1.6px solid #e0ddd6;border-radius:13px;cursor:pointer">← Précédent</button>
+        </sc-if>
+        <button type="button" onClick="{{ next }}" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:15px 22px;font-family:'Figtree',sans-serif;font-weight:700;font-size:15.5px;color:#fff;background:var(--accent,#d9682f);border:none;border-radius:13px;cursor:pointer;box-shadow:0 8px 18px -9px var(--accent,#d9682f)">{{ nextLabel }}</button>
+      </div>
+    </sc-if>
+  </main>
+
+  <p style="max-width:600px;width:100%;text-align:center;font-size:12.5px;color:#9a968d;margin:18px auto 0;line-height:1.5">🔒 Préqualification confidentielle · Groupe WT Corporation et ses compagnies affiliées.<sc-if value="{{ savedIndicator }}" hint-placeholder-val=""><br><span style="color:#7ea88c;font-weight:600">✓ Vos réponses sont sauvegardées automatiquement sur cet appareil.</span></sc-if></p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;620px&quot;,&quot;height&quot;:&quot;820px&quot;},&quot;accentTheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Chaleureux (orange terracotta)&quot;,&quot;options&quot;:[&quot;Chaleureux (orange terracotta)&quot;,&quot;Corporatif (bleu profond)&quot;,&quot;Sobre (vert forêt)&quot;,&quot;Industriel (graphite)&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Apparence&quot;}}">
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    const saved = this.load();
+    this.state = {
+      step: (typeof saved.step === 'number' && saved.step < 5) ? saved.step : 0,
+      f: Object.assign(this.emptyForm(), saved.f || {}),
+      files: {},
+      fileErrors: {},
+      errors: {},
+      prenomAccueil: saved.prenomAccueil || '',
+      sendState: null,
+      sendError: null,
+      documentsManquants: [],
+    };
+    this.hadProgress = !!(saved.f && Object.keys(saved.f).some(k => saved.f[k] && saved.f[k] !== false));
+  }
+
+  emptyForm(){
+    return {
+      prenom:'',nom:'',courriel:'',telephone:'',adresse:'',ville:'',province:'',codePostal:'',dateNaissance:'',
+      compagnie:'',compagnieAutre:'',poste:'',gestionnaire:'',
+      permisClasse:'',permisExpiration:'',anneesExperience:'',
+      expRemorquage:'',expTransport:'',expLivraison:'',expSimilaire:'',accidents:'',suspensions:'',
+      consentExactitude:false,consentAnalyse:false,consentAssureur:false,consentPrequalification:false,
+    };
+  }
+
+  load(){ try { return JSON.parse(localStorage.getItem('wt_prequal_v1')||'{}'); } catch(e){ return {}; } }
+  save(){ try { localStorage.setItem('wt_prequal_v1', JSON.stringify({step:this.state.step, f:this.state.f, prenomAccueil:this.state.prenomAccueil})); } catch(e){} }
+  componentDidUpdate(){ this.save(); }
+
+  token(){ try { return localStorage.getItem('wt_prequal_token')||''; } catch(e){ return ''; } }
+
+  componentDidMount(){
+    // Lit ?token= ou le token mémorisé, puis préremplit via le serveur.
+    let token = '';
+    try { token = new URLSearchParams(location.search).get('token')||''; } catch(e){}
+    if(token){ try { localStorage.setItem('wt_prequal_token', token); } catch(e){} }
+    else token = this.token();
+    const url = (window.WT_CONFIG && window.WT_CONFIG.SCRIPT_URL) || '';
+    if(!token || !url) return;
+    fetch(url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'lookupPrequalToken', token: token})})
+      .then(r=>r.json())
+      .then(res=>{
+        if(!res || !res.ok || !res.prefill) return;
+        const p = res.prefill;
+        this.setState(s=>{
+          const cur = s.f;
+          const started = cur && (cur.prenom || cur.nom);
+          if(started) return { prenomAccueil: p.prenom || '' };
+          return { prenomAccueil: p.prenom || '', f: Object.assign(this.emptyForm(), {
+            prenom:p.prenom||'', nom:p.nom||'', courriel:p.courriel||'', telephone:p.telephone||'',
+            adresse:p.adresse||'', ville:p.ville||'', province:p.province||'', codePostal:p.codePostal||'',
+            compagnie:p.compagnie||'', poste:p.poste||'', gestionnaire:p.gestionnaire||'',
+            permisClasse:p.permisClasse||'', permisExpiration:p.permisExpiration||''
+          })};
+        });
+      })
+      .catch(()=>{});
+  }
+
+  scrollTop(){ try { window.scrollTo({top:0,behavior:'smooth'}); } catch(e){ window.scrollTo(0,0); } }
+
+  onField = (e) => { const {name, value} = e.target; this.setState(s => ({ f: {...s.f, [name]: value}, errors: {...s.errors, [name]: undefined} })); };
+  onCheck = (e) => { const {name, checked} = e.target; this.setState(s => ({ f: {...s.f, [name]: checked}, errors: {...s.errors, [name]: undefined} })); };
+
+  fmtSize(bytes){ if (bytes < 1024) return bytes + ' o'; if (bytes < 1048576) return (bytes/1024).toFixed(0) + ' Ko'; return (bytes/1048576).toFixed(1) + ' Mo'; }
+
+  onFile = (e) => {
+    const input = e.target; const slot = input.dataset.slot; const multi = input.multiple;
+    const allowed = ['pdf','jpg','jpeg','png','heic'];
+    const mimeByExt = {pdf:'application/pdf',jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',heic:'image/heic'};
+    const maxBytes = 15 * 1048576;
+    const incoming = Array.from(input.files || []); let err = null; const jobs = [];
+    for (const file of incoming){
+      const ext = (file.name.split('.').pop() || '').toLowerCase();
+      if (!allowed.includes(ext)){ err = 'Format non accepté (« ' + ext + ' »). Utilisez PDF, JPG, PNG ou HEIC.'; continue; }
+      if (file.size > maxBytes){ err = 'Le fichier « ' + file.name + ' » dépasse 15 Mo.'; continue; }
+      jobs.push(new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve({ name:file.name, size:file.size, sizeStr:this.fmtSize(file.size), mimeType:file.type || mimeByExt[ext] || 'application/octet-stream', base64:String(reader.result).split(',')[1] || '' });
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(file);
+      }));
+    }
+    Promise.all(jobs).then((results) => {
+      const accepted = results.filter(Boolean);
+      const readErr = results.some(x => !x) ? 'Un fichier n’a pas pu être lu. Veuillez réessayer.' : err;
+      this.setState(s => {
+        const prev = multi ? (s.files[slot] || []) : [];
+        const merged = prev.concat(accepted).map((x,i)=>({...x, idx:i}));
+        return { files: {...s.files, [slot]: merged}, fileErrors: {...s.fileErrors, [slot]: readErr} };
+      });
+    });
+    input.value = '';
+  };
+  onRemoveFile = (e) => {
+    const btn = e.currentTarget; const slot = btn.dataset.slot; const idx = parseInt(btn.dataset.idx, 10);
+    this.setState(s => { const arr = (s.files[slot] || []).filter((_,i)=>i!==idx).map((x,i)=>({...x, idx:i})); return { files: {...s.files, [slot]: arr} }; });
+  };
+
+  requiredFor(step){
+    const R = {
+      1: [['prenom','Prénom'],['nom','Nom'],['telephone','Téléphone'],['courriel','Courriel']],
+      2: [['compagnie','Compagnie visée'],['poste','Poste visé']],
+      3: [],
+      4: [],
+    };
+    return R[step] || [];
+  }
+  validateStep(step){
+    const errs = {};
+    for (const [key,label] of this.requiredFor(step)){
+      if (!this.state.f[key] || String(this.state.f[key]).trim() === '') errs[key] = 'Ce champ est requis.';
+    }
+    if (step === 1 && this.state.f.courriel && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(this.state.f.courriel)) errs.courriel = 'Adresse courriel invalide.';
+    if (step === 4){
+      if (!this.state.f.consentExactitude) errs.consentExactitude = 'Requis pour continuer.';
+      if (!this.state.f.consentAnalyse) errs.consentAnalyse = 'Requis pour continuer.';
+      if (!this.state.f.consentAssureur) errs.consentAssureur = 'Requis pour continuer.';
+      if (!this.state.f.consentPrequalification) errs.consentPrequalification = 'Requis pour continuer.';
+    }
+    return errs;
+  }
+
+  next = () => {
+    const errs = this.validateStep(this.state.step);
+    if (Object.keys(errs).length){ this.setState({ errors: errs }); this.scrollTop(); return; }
+    const toStep = Math.min(5, this.state.step + 1);
+    this.setState({ step: toStep, errors: {} });
+    // Marque la progression côté serveur (best-effort).
+    if (this.state.step === 0) this.pingProgress('Préqualification commencée');
+    if (toStep === 5) this.submitToServer();
+    this.scrollTop();
+  };
+  prev = () => { this.setState(s => ({ step: Math.max(0, s.step - 1), errors: {} })); this.scrollTop(); };
+  start = () => { this.setState({ step: 1 }); this.pingProgress('Préqualification commencée'); this.scrollTop(); };
+  clearAll = () => {
+    try { localStorage.removeItem('wt_prequal_v1'); } catch(e){}
+    this.hadProgress = false;
+    this.setState({ step: 0, f: this.emptyForm(), files: {}, fileErrors: {}, errors: {}, sendState: null, sendError: null, documentsManquants: [] });
+  };
+
+  pingProgress(statut){
+    const url = (window.WT_CONFIG && window.WT_CONFIG.SCRIPT_URL) || ''; const token = this.token();
+    if(!url || !token) return;
+    try { fetch(url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, keepalive:true, body: JSON.stringify({action:'updatePrequalProgress', token: token, statut: statut})}); } catch(e){}
+  }
+
+  fileCategories(){ return { cv:'CV', dossierConduite:'Dossier de conduite', permis:'Permis de conduire', autre:'Autre document' }; }
+  collectFiles(){
+    const files = this.state.files; const cats = this.fileCategories(); const out = [];
+    for (const slot in cats){ for (const x of (files[slot]||[])){ out.push({ categorie:cats[slot], nom:x.name, mimeType:x.mimeType||'', taille:x.size||0, base64:x.base64||'' }); } }
+    return out;
+  }
+  submitPayload(){
+    const f = this.state.f;
+    const compagnie = (f.compagnie==='Autre' ? f.compagnieAutre : f.compagnie);
+    return {
+      action:'submitPrequal', type:'prequalification', submittedAt:new Date().toISOString(),
+      token:this.token(),
+      prenom:f.prenom, nom:f.nom, courriel:f.courriel, telephone:f.telephone, compagnie:compagnie, poste:f.poste,
+      data:{
+        adresse:f.adresse, ville:f.ville, province:f.province, codePostal:f.codePostal, dateNaissance:f.dateNaissance,
+        courriel:f.courriel, telephone:f.telephone, compagnie:compagnie, poste:f.poste, gestionnaire:f.gestionnaire,
+        permisClasse:f.permisClasse, permisExpiration:f.permisExpiration, anneesExperience:f.anneesExperience,
+        expRemorquage:f.expRemorquage, expTransport:f.expTransport, expLivraison:f.expLivraison, expSimilaire:f.expSimilaire,
+        accidents:f.accidents, suspensions:f.suspensions,
+        consentExactitude:!!f.consentExactitude, consentAnalyse:!!f.consentAnalyse,
+        consentAssureur:!!f.consentAssureur, consentPrequalification:!!f.consentPrequalification,
+      },
+      fichiers:this.collectFiles(),
+    };
+  }
+  submitToServer(){
+    const url = (window.WT_CONFIG && window.WT_CONFIG.SCRIPT_URL) || '';
+    if (this.state.sendState === 'sending' || this.state.sendState === 'sent') return;
+    if (!url){ this.setState({ sendState:'error', sendError:'L’adresse du serveur RH n’est pas configurée. Contactez rh@wtcorporation.ca.' }); return; }
+    if (!this.token()){ this.setState({ sendState:'error', sendError:'Lien de préqualification invalide ou expiré. Contactez rh@wtcorporation.ca.' }); return; }
+    this.setState({ sendState:'sending', sendError:null });
+    fetch(url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(this.submitPayload())})
+      .then((r) => r.json())
+      .then((res) => {
+        if (res && res.ok){ this.setState({ sendState:'sent', documentsManquants: res.documentsManquants || [] }); try { localStorage.removeItem('wt_prequal_v1'); } catch(e){} }
+        else { this.setState({ sendState:'error', sendError:(res && res.error) || 'Le serveur a refusé la soumission.' }); }
+      })
+      .catch(() => { this.setState({ sendState:'error', sendError:'Impossible de joindre le serveur. Vérifiez votre connexion Internet, puis réessayez.' }); });
+  }
+  retrySend = () => { this.submitToServer(); };
+
+  palette(){
+    const map = {
+      'Chaleureux (orange terracotta)': {main:'#d9682f', soft:'#fdeadd'},
+      'Corporatif (bleu profond)':      {main:'#2a5db0', soft:'#e4edfb'},
+      'Sobre (vert forêt)':             {main:'#2f7d55', soft:'#e2f1e8'},
+      'Industriel (graphite)':          {main:'#3a3f47', soft:'#e9eaec'},
+    };
+    return map[this.props.accentTheme] || map['Chaleureux (orange terracotta)'];
+  }
+
+  renderVals(){
+    const step = this.state.step;
+    const titles = ['','Identité','Poste et conduite','Documents','Consentements'];
+    const pal = this.palette(); const f = this.state.f;
+    return {
+      step,
+      isStep0: step===0, isStep1: step===1, isStep2: step===2, isStep3: step===3, isStep4: step===4, isStep5: step===5,
+      f: this.state.f, e: this.state.errors,
+      accentMain: pal.main, accentSoft: pal.soft,
+      hi: this.state.prenomAccueil ? ('Bienvenue ' + this.state.prenomAccueil + ' 👋') : 'Préqualification de votre candidature',
+      intro: 'Avant de compléter un dossier d’embauche complet, cette courte étape nous permet d’évaluer votre admissibilité. Quelques informations et documents suffisent.',
+      showProgress: step>=1 && step<=4,
+      showNav: step>=1 && step<=4,
+      showPrev: step>=1,
+      stepLabel: 'Étape ' + step + ' sur 4',
+      stepTitle: titles[step] || '',
+      progressPct: Math.round((Math.min(Math.max(step,1),4)/4)*100),
+      nextLabel: step===4 ? 'Envoyer ma préqualification ✓' : 'Suivant →',
+      startLabel: this.hadProgress ? 'Reprendre' : 'Commencer',
+      hasProgress: this.hadProgress,
+      savedIndicator: step>=1 && step<=4,
+      showCompagnieAutre: f.compagnie === 'Autre',
+      isSending: this.state.sendState === 'sending',
+      isSent: this.state.sendState === 'sent',
+      isSendError: this.state.sendState === 'error',
+      sendError: this.state.sendError || '',
+      incompleteMsg: (this.state.documentsManquants && this.state.documentsManquants.length) ? this.state.documentsManquants.join(', ') : '',
+      retrySend: this.retrySend,
+      onField: this.onField, onCheck: this.onCheck, onFile: this.onFile, onRemoveFile: this.onRemoveFile,
+      next: this.next, prev: this.prev, start: this.start, clearAll: this.clearAll,
+      files_cv: this.state.files.cv || [], fileErr_cv: this.state.fileErrors.cv,
+      files_dossierConduite: this.state.files.dossierConduite || [], fileErr_dossierConduite: this.state.fileErrors.dossierConduite,
+      files_permis: this.state.files.permis || [], fileErr_permis: this.state.fileErrors.permis,
+      files_autre: this.state.files.autre || [], fileErr_autre: this.state.fileErrors.autre,
+    };
+  }
+}
+</script>
+</body>
+</html>
