@@ -98,7 +98,7 @@
       </div>
       <div>
         <label>Poste</label>
-        <select id="poste" onchange="togglePosteAutre()">
+        <select id="poste" onchange="togglePosteAutre();applyDocDefaults()">
           <option value="">Choisir…</option>
           <option>Chauffeur plateforme</option>
           <option>Chauffeur lourd</option>
@@ -122,16 +122,18 @@
     </div>
     <div style="margin-top:14px"><label>Notes internes RH (non visibles par l'employé)</label><textarea id="notes"></textarea></div>
     <div style="margin-top:14px">
-      <label>Documents requis (ajoutés aux notes internes)</label>
+      <label>Documents requis (cochez ce qui s'applique — ajustable ensuite dans le détail)</label>
       <div class="docs" id="docsReq">
         <label class="chk"><input type="checkbox" value="Permis recto"> Permis recto</label>
         <label class="chk"><input type="checkbox" value="Permis verso"> Permis verso</label>
         <label class="chk"><input type="checkbox" value="Dossier de conduite C5"> Dossier de conduite C5</label>
-        <label class="chk"><input type="checkbox" value="Dossier de conduite C1"> Dossier de conduite C1</label>
+        <label class="chk"><input type="checkbox" value="Dossier de conduite C1"> Dossier de conduite C1 <span class="muted" style="font-weight:400">(facultatif sauf classe 1)</span></label>
         <label class="chk"><input type="checkbox" value="Specimen cheque"> Spécimen de chèque</label>
-        <label class="chk"><input type="checkbox" value="WreckMaster"> WreckMaster</label>
+        <label class="chk"><input type="checkbox" value="WreckMaster"> WreckMaster <span class="muted" style="font-weight:400">(facultatif)</span></label>
+        <label class="chk"><input type="checkbox" value="CFTR"> CFTR <span class="muted" style="font-weight:400">(facultatif)</span></label>
         <label class="chk"><input type="checkbox" value="CV"> CV</label>
       </div>
+      <p class="muted" style="font-size:12px;margin:6px 0 0">Les documents cochés définissent quels documents seront comptés comme « manquants ». Un document décoché (ex. le candidat ne l'a pas) ne bloquera pas le dossier.</p>
     </div>
     <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:12px;align-items:center">
       <label class="chk"><input id="envoyerCourriel" type="checkbox" checked> Envoyer le courriel d'invitation maintenant</label>
@@ -295,14 +297,29 @@
   function togglePosteAutre(){
     document.getElementById('posteAutreWrap').style.display = (document.getElementById('poste').value==='Autre')?'block':'none';
   }
+  // Pré-coche les documents requis par défaut selon le poste (la RH peut ajuster).
+  function applyDocDefaults(){
+    var poste=document.getElementById('poste').value;
+    var map={
+      'Chauffeur plateforme':['Permis recto','Permis verso','Dossier de conduite C5','Specimen cheque'],
+      'Chauffeur lourd':['Permis recto','Permis verso','Dossier de conduite C5','Specimen cheque'],
+      'Chauffeur classe 1':['Permis recto','Permis verso','Dossier de conduite C1','Specimen cheque','WreckMaster'],
+      'Répartiteur':['Specimen cheque','CV'],
+      'Mécanicien':['Specimen cheque','CV'],
+      'Administration':['Specimen cheque','CV'],
+      'Gestionnaire':['Specimen cheque','CV']
+    };
+    var def=map[poste];
+    if(!def) return; // « Autre » ou vide : ne rien changer
+    var set={}; def.forEach(function(t){ set[t]=true; });
+    document.querySelectorAll('#docsReq input[type=checkbox]').forEach(function(c){ c.checked=!!set[c.value]; });
+  }
 
   // -------- Créer une invitation --------
   function createInvitation(){
     var poste = document.getElementById('poste').value;
     if(poste==='Autre') poste = document.getElementById('posteAutre').value.trim();
     var docs=[]; document.querySelectorAll('#docsReq input:checked').forEach(function(c){ docs.push(c.value); });
-    var notes = document.getElementById('notes').value.trim();
-    if(docs.length) notes = (notes?notes+'\n':'')+'Documents requis : '+docs.join(', ');
     var payload = {
       prenom: document.getElementById('prenom').value.trim(),
       nom: document.getElementById('nom').value.trim(),
@@ -312,7 +329,8 @@
       poste: poste,
       dateEntree: document.getElementById('dateEntree').value,
       gestionnaire: document.getElementById('gestionnaire').value.trim(),
-      notes: notes,
+      notes: document.getElementById('notes').value.trim(),
+      documentsRequis: docs,
       assuranceRequise: document.getElementById('parcours').value !== 'sans',
       envoyerCourriel: document.getElementById('envoyerCourriel').checked
     };
@@ -449,6 +467,16 @@
     }).join('') : '<p class="muted">Aucun document reçu pour l\'instant.</p>';
     var manqHtml = manq.length ? manq.map(function(t){ return '<span class="tag red" style="margin:3px 4px 0 0">'+esc(t)+'</span>'; }).join('') : '<span class="tag green">Aucun document manquant</span>';
 
+    // Éditeur « Documents requis » : décocher un document non applicable → il ne comptera plus comme manquant.
+    var cat = res.docsCatalogue || [];
+    var reqSet = {}; (res.documentsRequis||[]).forEach(function(t){ reqSet[t]=true; });
+    var reqEditHtml = cat.length ? (
+      '<h3 style="margin:18px 0 6px">Documents requis (modifiable)</h3>'+
+      '<p class="muted" style="font-size:12px;margin:0 0 6px">Décochez un document que le candidat n\'a pas ou qui ne s\'applique pas : il ne comptera plus comme « manquant ».</p>'+
+      '<div class="docs" id="reqEdit">'+cat.map(function(t){ return '<label class="chk"><input type="checkbox" value="'+esc(t)+'"'+(reqSet[t]?' checked':'')+'> '+esc(t)+'</label>'; }).join('')+'</div>'+
+      '<button class="btn sm sec" style="margin-top:8px" onclick="saveRequiredDocs(\''+esc(d.token)+'\')">Enregistrer les documents requis</button> <span id="reqMsg" class="muted" style="font-size:12.5px"></span>'
+    ) : '';
+
     // Fiche d'embauche officielle — seulement si le dossier est accepté
     var fiche = res.fiche || {};
     var fld = function(id,label,v){ return '<div><label>'+esc(label)+'</label><input id="'+id+'" type="text" value="'+esc(v||'')+'"></div>'; };
@@ -495,6 +523,7 @@
         : '<div style="background:#f0ede6;border:1px solid #e4e1da;border-radius:12px;padding:10px 14px;margin:14px 0;font-size:13px;color:#6b6f77">Parcours <b>sans assurance</b> (dossier employé seulement).</div>')+
       '<h3 style="margin:18px 0 4px">Documents reçus</h3>'+recusHtml+
       '<h3 style="margin:18px 0 6px">Documents manquants</h3><div>'+manqHtml+'</div>'+
+      reqEditHtml+
       '<h3 style="margin:18px 0 4px">Notes internes</h3><pre class="notes">'+(esc(d.notes)||'(aucune)')+'</pre>'+
       '<div style="display:flex;gap:8px;margin-top:8px"><input id="newNote" placeholder="Ajouter une note interne…"><button class="btn sm sec" onclick="addNote(\''+esc(d.token)+'\')">Ajouter</button></div>'+
       '<h3 style="margin:20px 0 6px">Validation RH</h3>'+
@@ -517,6 +546,12 @@
     var v=document.getElementById('newNote').value.trim(); if(!v) return;
     google.script.run.withSuccessHandler(function(res){ if(res&&res.ok){ openDetail(token); } else alert((res&&res.error)||'Échec.'); })
       .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); }).rhAddNote(token, v);
+  }
+  function saveRequiredDocs(token){
+    var docs=[]; document.querySelectorAll('#reqEdit input:checked').forEach(function(c){ docs.push(c.value); });
+    var m=document.getElementById('reqMsg'); if(m) m.textContent='Enregistrement…';
+    google.script.run.withSuccessHandler(function(res){ if(res&&res.ok){ openDetail(token); loadList(); } else { if(m) m.textContent=''; alert((res&&res.error)||'Échec.'); } })
+      .withFailureHandler(function(e){ if(m) m.textContent=''; alert(String(e&&e.message?e.message:e)); }).rhSetRequiredDocs(token, docs);
   }
   function validate(token, decision){
     var cmt=document.getElementById('valCmt').value.trim();

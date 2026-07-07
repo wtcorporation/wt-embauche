@@ -91,7 +91,7 @@ const COLONNES_INVITATIONS = [
   "Gestionnaire", "Statut", "% complétion", "Dernière activité",
   "Lien formulaire", "Lien dossier Drive", "Notes internes",
   "Assurance requise", "Assurance approuvée",
-  "Compagnies assurées"
+  "Compagnies assurées", "Documents requis"
 ];
 const COLONNES_JOURNAL = ["Date/heure", "ID invitation", "Action", "Détail", "Utilisateur ou système"];
 
@@ -121,6 +121,11 @@ const DOCS_REQUIS_PAR_POSTE = {
   "Gestionnaire":         ["Specimen cheque", "CV"]
 };
 const DOCS_REQUIS_DEFAUT = ["Permis recto", "Permis verso", "Specimen cheque"];
+
+// Catalogue complet des types de documents sélectionnables par la RH (cases à cocher,
+// à la création d'invitation et dans la vue détail). CFTR et WreckMaster sont facultatifs ;
+// le Dossier de conduite C1 est requis surtout pour le poste « Chauffeur classe 1 ».
+const DOCS_CATALOGUE = ["Permis recto", "Permis verso", "Dossier de conduite C5", "Dossier de conduite C1", "Specimen cheque", "WreckMaster", "CFTR", "CV"];
 
 // Onglet consolidé « Employés » (1 ligne par employé) dans chaque feuille de
 // compagnie. Alimenté par upsertEmployee_ à chaque soumission (clé = token).
@@ -665,7 +670,9 @@ function buildSmsMessage_(prenom, lien) {
 }
 
 function getInvitationsSheet_() {
-  return getOrCreateSheet_(getSpreadsheet_(), SHEET_INVITATIONS, COLONNES_INVITATIONS);
+  var sheet = getOrCreateSheet_(getSpreadsheet_(), SHEET_INVITATIONS, COLONNES_INVITATIONS);
+  ensureColumns_(sheet, COLONNES_INVITATIONS); // ajoute « Documents requis » aux feuilles existantes, sans rien supprimer
+  return sheet;
 }
 
 function invitationRowByToken_(token) {
@@ -693,7 +700,8 @@ function invitationToObject_(v) {
     lienFormulaire: dcStr_(v[15]), lienDrive: dcStr_(v[16]), notes: dcStr_(v[17]),
     assuranceRequise: (v[18] === false || v[18] === 'false' || v[18] === 'Non') ? false : true,
     assureurApprouve: (v[19] === true || v[19] === 'true' || v[19] === 'Oui'),
-    compagniesAssurees: dcStr_(v[20])
+    compagniesAssurees: dcStr_(v[20]),
+    documentsRequis: dcStr_(v[21])
   };
 }
 
@@ -756,13 +764,17 @@ function rhCreateInvitation(payload) {
   var folder = getOrCreateEmployeeFolder(nom, prenom, payload.compagnie);
 
   var statut = (payload.envoyerCourriel && payload.courriel) ? "Invitation envoyée" : "Brouillon";
+  // Documents requis choisis par la RH : liste → "a, b, c" ; case explicitement vide → "(aucun)" ;
+  // rien fourni → laissé vide (repli sur la table par poste pour compatibilité).
+  var docsReqArr = Array.isArray(payload.documentsRequis) ? payload.documentsRequis : null;
+  var docsReqStr = docsReqArr ? (docsReqArr.length ? docsReqArr.join(", ") : "(aucun)") : "";
   getInvitationsSheet_().appendRow([
     invitationId, token, new Date(), user, prenom, nom,
     String(payload.courriel || ""), String(payload.telephone || ""),
     String(payload.compagnie || ""), String(payload.poste || ""),
     String(payload.dateEntree || ""), String(payload.gestionnaire || ""),
     statut, "0 %", new Date(), lienForm, folder.getUrl(), String(payload.notes || ""),
-    assuranceRequise, false, ""
+    assuranceRequise, false, "", docsReqStr
   ]);
   logActivite_(invitationId, "Invitation créée", prenom + " " + nom + " — " + (payload.poste || ""), user);
 
@@ -800,7 +812,7 @@ function rhListInvitations() {
   });
   var out = [];
   invs.forEach(function (inv) {
-    var requis = docsRequisPour_(inv.poste);
+    var requis = docsRequisFromInv_(inv);
     var recus = recuParInv[String(inv.id)] || {};
     inv.documentsManquants = requis.filter(function (t) { return !recus[t]; });
     inv.documentsRequisCount = requis.length;
@@ -930,6 +942,19 @@ function docsRequisPour_(poste) {
   return DOCS_REQUIS_PAR_POSTE[poste] || DOCS_REQUIS_DEFAUT;
 }
 
+/**
+ * Documents requis EFFECTIFS d'une invitation :
+ *  - liste choisie par la RH (colonne « Documents requis ») si renseignée ;
+ *  - « (aucun) » = explicitement aucun document requis (rien ne sera « manquant ») ;
+ *  - vide (anciennes invitations sans la colonne) = repli sur la table par poste.
+ */
+function docsRequisFromInv_(inv) {
+  var raw = (inv && inv.documentsRequis != null) ? String(inv.documentsRequis).trim() : "";
+  if (raw === "(aucun)") return [];
+  if (raw === "") return docsRequisPour_(inv ? inv.poste : "");
+  return raw.split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+}
+
 /** RH — détails d'un dossier : infos + documents reçus + requis + manquants. */
 function rhGetDossier(token) {
   requireRH_();
@@ -945,9 +970,9 @@ function rhGetDossier(token) {
       typesRecus[String(vals[r][2])] = true;
     }
   }
-  var requis = docsRequisPour_(rec.poste);
+  var requis = docsRequisFromInv_(rec);
   var manquants = requis.filter(function (t) { return !typesRecus[t]; });
-  return { ok: true, dossier: rec, documentsRecus: recus, documentsRequis: requis, documentsManquants: manquants, statutsDoc: STATUTS_DOC, fiche: ficheFor_(rec.token) };
+  return { ok: true, dossier: rec, documentsRecus: recus, documentsRequis: requis, documentsManquants: manquants, docsCatalogue: DOCS_CATALOGUE, statutsDoc: STATUTS_DOC, fiche: ficheFor_(rec.token) };
 }
 
 /** RH — change le statut d'un document reçu (par n° de ligne fourni par rhGetDossier). */
@@ -963,6 +988,23 @@ function rhSetDocStatus(token, rowIndex, statut, commentaire) {
   if (typeof commentaire !== "undefined" && commentaire !== null) sheet.getRange(rowIndex, 8).setValue(commentaire);
   logActivite_(sheet.getRange(rowIndex, 1).getValue(), "Statut document modifié", statut + (commentaire ? (" — " + commentaire) : ""), user);
   return { ok: true };
+}
+
+/**
+ * RH — définit la liste des documents requis pour ce dossier (cases cochées dans le détail).
+ * Décocher un document que le candidat n'a pas / non applicable → il ne compte plus comme « manquant ».
+ * Liste vide = « (aucun) » (explicitement aucun document requis).
+ */
+function rhSetRequiredDocs(token, docs) {
+  var user = requireRH_();
+  var found = invitationRowByToken_(token);
+  if (!found) return { ok: false, error: "Invitation introuvable." };
+  var arr = Array.isArray(docs) ? docs.filter(function (d) { return String(d).trim() !== ""; }) : [];
+  var str = arr.length ? arr.join(", ") : "(aucun)";
+  setInvitationField_(token, "Documents requis", str);
+  setInvitationField_(token, "Dernière activité", new Date());
+  logActivite_(found.values[0], "Documents requis modifiés", str, user);
+  return { ok: true, documentsRequis: arr };
 }
 
 /** RH — décision de validation : « Dossier accepté » ou « Dossier à corriger ». */
