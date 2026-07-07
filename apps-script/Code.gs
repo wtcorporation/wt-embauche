@@ -40,6 +40,40 @@ const ONGLETS_PAR_TYPE = {
 
 const EXTENSIONS_PERMISES = ["pdf", "jpg", "jpeg", "png", "heic"];
 
+// ===================== ROUTAGE PAR COMPAGNIE =====================
+// Chaque compagnie a son propre dossier Drive et sa propre feuille Google.
+// Le dossier employé et les soumissions/documents reçus sont routés ici.
+// Le suivi RH central (invitations, journal, fiche, erreurs) reste dans
+// SPREADSHEET_ID (voir plus haut).
+const COMPANIES = {
+  "Remorquage PDR 2011 inc.": { folder: "1cSEJslMwIDN0uwbjGPsBhbXU9ma57eX2", sheet: "1Ruw3t3ZbyjeeXESwJnU-FjDQTBkKPRil2iEXIH6JHsY" },
+  "Livraison Primus inc.":    { folder: "1R7Ov6hy0jj3iBmcX8_OEkDglRRfgxezO", sheet: "1SXfYznhKVntO-L-RjnwvKCEqJ6hwP7yJCzh4HmiKZcg" },
+  "Remorquage Axis":          { folder: "1agFbL4PLJHUhWhNCuOeURk9GUTbqHknx", sheet: "1BOTaV1Gkfso2gr4hNOgmeYE7u6aeS1JMbgomOT8zZ-4" },
+  "Remorquage Bean & Fille":  { folder: "16_V6RQZkq--f2Vog8hO8KkUCo1deYLmD", sheet: "1LtwFUvIPkZJfZOnVTYQSQIFJnv1Fm912Esk4LHZKTJ4" },
+  "Groupe WT Corporation":    { folder: EMPLOYEE_ROOT_FOLDER_ID, sheet: SPREADSHEET_ID }
+};
+// Alias : anciens/variantes de noms → nom canonique de COMPANIES.
+const COMPANY_ALIAS = { "WT Corporation": "Groupe WT Corporation" };
+
+function resolveCompany_(name) {
+  var n = String(name || "").trim();
+  if (COMPANY_ALIAS[n]) n = COMPANY_ALIAS[n];
+  return COMPANIES[n] || COMPANIES["Groupe WT Corporation"]; // repli : Groupe WT
+}
+var __ssCache_ = {};
+function companySpreadsheet_(name) {
+  var id = resolveCompany_(name).sheet;
+  if (!id || id === "À_REMPLIR") throw new Error("Feuille Google non configurée pour la compagnie « " + name + " ».");
+  if (!__ssCache_[id]) __ssCache_[id] = SpreadsheetApp.openById(id);
+  return __ssCache_[id];
+}
+function companyFolder_(name) {
+  return DriveApp.getFolderById(resolveCompany_(name).folder);
+}
+function docsSheetForCompany_(name) {
+  return getOrCreateSheet_(companySpreadsheet_(name), SHEET_DOCS, COLONNES_DOCS);
+}
+
 // ===================== PORTAIL RH — INVITATIONS (V1) =====================
 // Courriels autorisés à utiliser le tableau de bord RH (vérifiés côté serveur
 // via Session.getActiveUser()). À déployer en « Exécuter comme moi · Accès :
@@ -143,7 +177,8 @@ function handleSubmit_(data, e) {
   }
 
   var submissionId = nextSubmissionId_();
-  var folder = getOrCreateEmployeeFolder(nom, prenom);
+  var compagnie = data.compagnie || (data.data && data.data.entreprise) || "";
+  var folder = getOrCreateEmployeeFolder(nom, prenom, compagnie);
   var employeeName = folder.getName(); // « NOM Prénom » normalisé
 
   var savedFiles = saveAttachments_(folder, data, employeeName);
@@ -188,8 +223,8 @@ function jsonResponse_(obj) {
  * Cherche le dossier « NOM Prénom » dans le dossier racine RH.
  * S'il existe, le réutilise (jamais de doublon). Sinon, le crée.
  */
-function getOrCreateEmployeeFolder(lastName, firstName) {
-  const rootFolder = DriveApp.getFolderById(EMPLOYEE_ROOT_FOLDER_ID);
+function getOrCreateEmployeeFolder(lastName, firstName, compagnie) {
+  const rootFolder = companyFolder_(compagnie);
 
   const normalizedLastName = normalizeName(lastName).toUpperCase();
   const normalizedFirstName = capitalizeName(normalizeName(firstName));
@@ -453,7 +488,8 @@ function nextSubmissionId_() {
 }
 
 function logToSheets_(data, submissionId, folder, savedFiles) {
-  var ss = getSpreadsheet_();
+  var compagnie = data.compagnie || (data.data && data.data.entreprise) || "";
+  var ss = companySpreadsheet_(compagnie);
   var nbFichiers = (data.fichiers || []).length;
   var commentaire = savedFiles.some(function (n) { return String(n).indexOf("ÉCHEC") === 0; })
     ? "Certains fichiers n'ont pas pu être sauvegardés : " + savedFiles.filter(function (n) { return String(n).indexOf("ÉCHEC") === 0; }).join("; ")
@@ -698,8 +734,8 @@ function rhCreateInvitation(payload) {
   // Sans assurance : le lien saute la partie assureur (?assurance=0).
   var lienForm = buildFormLink_(token) + (assuranceRequise ? "" : "&assurance=0");
 
-  // Création immédiate du dossier Drive (préférence RH), sans doublon.
-  var folder = getOrCreateEmployeeFolder(nom, prenom);
+  // Création immédiate du dossier Drive dans la compagnie choisie, sans doublon.
+  var folder = getOrCreateEmployeeFolder(nom, prenom, payload.compagnie);
 
   var statut = (payload.envoyerCourriel && payload.courriel) ? "Invitation envoyée" : "Brouillon";
   getInvitationsSheet_().appendRow([
@@ -732,24 +768,26 @@ function rhCreateInvitation(payload) {
 function rhListInvitations() {
   requireRH_();
   var values = getInvitationsSheet_().getDataRange().getValues();
-  // Types de documents reçus par invitation (une seule lecture de documents_recus).
-  var docVals = getDocsSheet_().getDataRange().getValues();
+  var invs = [];
+  for (var r = 1; r < values.length; r++) { if (values[r][0]) invs.push(invitationToObject_(values[r])); }
+  // Documents reçus : lire la feuille de chaque compagnie distincte présente.
+  var sheetsToRead = {}; // sheetId -> une compagnie représentative
+  invs.forEach(function (inv) { sheetsToRead[resolveCompany_(inv.compagnie).sheet] = inv.compagnie; });
   var recuParInv = {};
-  for (var d = 1; d < docVals.length; d++) {
-    var id = String(docVals[d][0]);
-    if (!recuParInv[id]) recuParInv[id] = {};
-    recuParInv[id][String(docVals[d][2])] = true;
-  }
+  Object.keys(sheetsToRead).forEach(function (sid) {
+    try {
+      var dv = docsSheetForCompany_(sheetsToRead[sid]).getDataRange().getValues();
+      for (var d = 1; d < dv.length; d++) { var id = String(dv[d][0]); if (!recuParInv[id]) recuParInv[id] = {}; recuParInv[id][String(dv[d][2])] = true; }
+    } catch (e) { /* feuille compagnie inaccessible : ignorer */ }
+  });
   var out = [];
-  for (var r = 1; r < values.length; r++) {
-    if (!values[r][0]) continue;
-    var inv = invitationToObject_(values[r]);
+  invs.forEach(function (inv) {
     var requis = docsRequisPour_(inv.poste);
     var recus = recuParInv[String(inv.id)] || {};
     inv.documentsManquants = requis.filter(function (t) { return !recus[t]; });
     inv.documentsRequisCount = requis.length;
     out.push(inv);
-  }
+  });
   return { ok: true, invitations: out };
 }
 
@@ -860,7 +898,8 @@ function logDocumentsRecus_(token, employeeName, data, folder) {
   if (!fichiers.length) return;
   var found = invitationRowByToken_(token);
   var idInv = found ? found.values[0] : "";
-  var sheet = getDocsSheet_();
+  var compagnie = data.compagnie || (data.data && data.data.entreprise) || "";
+  var sheet = docsSheetForCompany_(compagnie);
   var lien = (folder && folder.getUrl) ? folder.getUrl() : "";
   for (var i = 0; i < fichiers.length; i++) {
     var f = fichiers[i] || {};
@@ -879,7 +918,7 @@ function rhGetDossier(token) {
   if (!found) return { ok: false, error: "Invitation introuvable." };
   var rec = invitationToObject_(found.values);
 
-  var vals = getDocsSheet_().getDataRange().getValues();
+  var vals = docsSheetForCompany_(rec.compagnie).getDataRange().getValues();
   var recus = [], typesRecus = {};
   for (var r = 1; r < vals.length; r++) {
     if (String(vals[r][0]) === String(rec.id)) {
@@ -893,10 +932,12 @@ function rhGetDossier(token) {
 }
 
 /** RH — change le statut d'un document reçu (par n° de ligne fourni par rhGetDossier). */
-function rhSetDocStatus(rowIndex, statut, commentaire) {
+function rhSetDocStatus(token, rowIndex, statut, commentaire) {
   var user = requireRH_();
   if (STATUTS_DOC.indexOf(statut) === -1) return { ok: false, error: "Statut de document invalide." };
-  var sheet = getDocsSheet_();
+  var found = invitationRowByToken_(token);
+  if (!found) return { ok: false, error: "Invitation introuvable." };
+  var sheet = docsSheetForCompany_(invitationToObject_(found.values).compagnie);
   rowIndex = parseInt(rowIndex, 10);
   if (!(rowIndex >= 2 && rowIndex <= sheet.getLastRow())) return { ok: false, error: "Ligne introuvable." };
   sheet.getRange(rowIndex, 6).setValue(statut);

@@ -429,7 +429,7 @@
     var cmt=document.querySelector('input[data-cmt="'+row+'"]');
     google.script.run.withSuccessHandler(function(res){ if(!res||!res.ok) alert((res&&res.error)||'Échec.'); else { var b=event&&event.target; if(b){ b.textContent='✓'; setTimeout(function(){b.textContent='Enregistrer';},1200);} } })
       .withFailureHandler(function(e){ alert(String(e&&e.message?e.message:e)); })
-      .rhSetDocStatus(row, sel.value, cmt.value);
+      .rhSetDocStatus(CURRENT.dossier.token, row, sel.value, cmt.value);
   }
   function addNote(token){
     var v=document.getElementById('newNote').value.trim(); if(!v) return;
