@@ -521,7 +521,7 @@ function logToSheets_(data, submissionId, folder, savedFiles) {
     TYPES_FORMULAIRE[data.type] || String(data.type || "inconnu"),
     "Reçu",
     nbFichiers,
-    folder.getUrl(),
+    lienIcone_(folder.getUrl()),
     commentaire
   ];
 
@@ -827,6 +827,7 @@ function rhUpdateStatus(token, statut) {
   setInvitationField_(token, "Dernière activité", new Date());
   var found = invitationRowByToken_(token);
   logActivite_(found ? found.values[0] : "", "Statut modifié par RH", statut, user);
+  updateEmployeeStatut_(token);
   return { ok: true };
 }
 
@@ -914,7 +915,7 @@ function logDocumentsRecus_(token, employeeName, data, folder) {
   var idInv = found ? found.values[0] : "";
   var compagnie = data.compagnie || (data.data && data.data.entreprise) || "";
   var sheet = docsSheetForCompany_(compagnie);
-  var lien = (folder && folder.getUrl) ? folder.getUrl() : "";
+  var lien = (folder && folder.getUrl) ? lienIcone_(folder.getUrl()) : "";
   for (var i = 0; i < fichiers.length; i++) {
     var f = fichiers[i] || {};
     sheet.appendRow([idInv, employeeName, String(f.categorie || "Document"), String(f.nom || ""), new Date(), "Reçu", lien, ""]);
@@ -972,6 +973,7 @@ function rhValidate(token, decision, commentaire) {
   setInvitationField_(token, "Dernière activité", new Date());
   if (commentaire) rhAddNote(token, "[Validation] " + statut + " — " + commentaire);
   logActivite_(found.values[0], "Dossier validé (RH)", statut + (commentaire ? (" — " + commentaire) : ""), user);
+  updateEmployeeStatut_(token);
   return { ok: true, statut: statut };
 }
 
@@ -984,6 +986,7 @@ function rhApproveInsurance(token, compagnies) {
   if (typeof compagnies !== "undefined" && compagnies !== null) setInvitationField_(token, "Compagnies assurées", String(compagnies));
   setInvitationField_(token, "Dernière activité", new Date());
   logActivite_(found.values[0], "Assureur approuvé (RH)", "Compagnies : " + (compagnies || "—"), user);
+  updateEmployeeStatut_(token);
   return { ok: true };
 }
 
@@ -1057,6 +1060,19 @@ function empSheetForCompany_(name) {
   return getOrCreateSheet_(companySpreadsheet_(name), SHEET_EMPLOYES, EMP_COLONNES);
 }
 
+// "yyyy-mm-dd" -> vrai objet Date (pour un vrai format date dans la feuille).
+function parseDateMaybe_(s) {
+  if (!s) return "";
+  var m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
+  return s;
+}
+// URL -> formule HYPERLINK affichant une icône 📎 cliquable (au lieu de l'URL brute).
+function lienIcone_(url) {
+  url = String(url || "");
+  return (url.indexOf("http") === 0) ? '=HYPERLINK("' + url + '","📎 Ouvrir")' : url;
+}
+
 /** Insère ou met à jour la ligne employé (clé = token, sinon Nom|Prénom). */
 function upsertEmployee_(data, folder, compagnie) {
   var token = String(data.token || "");
@@ -1082,18 +1098,21 @@ function upsertEmployee_(data, folder, compagnie) {
   }
   var upd = {};
   var set = function (i, v) { if (v !== undefined && v !== null && String(v) !== "") upd[i] = v; };
+  // Statut = statut du dossier (invitation) s'il existe, sinon la partie soumise.
+  var statutEmp = TYPES_FORMULAIRE[data.type] || data.type;
+  if (token) { var invRow = invitationRowByToken_(token); if (invRow) statutEmp = invitationToObject_(invRow.values).statut || statutEmp; }
   set(0, token); set(1, (prenom + " " + nom).trim()); set(2, new Date());
-  set(3, TYPES_FORMULAIRE[data.type] || data.type);
+  set(3, statutEmp);
   set(4, nom); set(5, prenom); set(6, data.courriel); set(7, data.telephone);
-  set(8, d.dateNaissance); set(9, d.adresse); set(10, d.ville); set(11, d.province); set(12, d.codePostal);
-  set(13, data.compagnie || d.entreprise || compagnie); set(14, data.poste || d.poste); set(15, d.dateEntree); set(16, d.typeEmploi); set(17, d.departement);
+  set(8, parseDateMaybe_(d.dateNaissance)); set(9, d.adresse); set(10, d.ville); set(11, d.province); set(12, d.codePostal);
+  set(13, data.compagnie || d.entreprise || compagnie); set(14, data.poste || d.poste); set(15, parseDateMaybe_(d.dateEntree)); set(16, d.typeEmploi); set(17, d.departement);
   set(18, d.gestionnaire);
-  set(19, d.permisNumero); set(20, d.permisClasse); set(21, d.permisExpiration); set(22, d.wreckmaster);
+  set(19, d.permisNumero); set(20, d.permisClasse); set(21, parseDateMaybe_(d.permisExpiration)); set(22, d.wreckmaster);
   set(23, d.urgenceNom); set(24, d.urgenceLien); set(25, d.urgenceTel);
   set(26, d.nasFourni);
   if (hasCat("Specimen cheque")) set(27, "Oui");
   set(28, docsSignes);
-  if (folder && folder.getUrl) set(29, folder.getUrl());
+  if (folder && folder.getUrl) set(29, lienIcone_(folder.getUrl()));
 
   if (rowIdx < 0) {
     var row = [];
@@ -1107,12 +1126,34 @@ function upsertEmployee_(data, folder, compagnie) {
   }
 }
 
+/** Met à jour le Statut de l'employé dans l'onglet Employés (feuille de sa compagnie). */
+function updateEmployeeStatut_(token) {
+  try {
+    var inv = invitationRowByToken_(token); if (!inv) return;
+    var rec = invitationToObject_(inv.values);
+    var sheet = empSheetForCompany_(rec.compagnie);
+    var vals = sheet.getDataRange().getValues();
+    for (var r = 1; r < vals.length; r++) {
+      if (String(vals[r][0]) === String(token)) {
+        sheet.getRange(r + 1, 4).setValue(rec.statut); // col D Statut
+        sheet.getRange(r + 1, 3).setValue(new Date()); // col C Date de mise à jour
+        return;
+      }
+    }
+  } catch (e) { /* non bloquant */ }
+}
+
 /** Construit/rafraîchit les onglets Dashboard + Fiche employé d'une compagnie. */
 function setupCompanySheet_(name) {
   var ss = companySpreadsheet_(name);
   var emp = getOrCreateSheet_(ss, SHEET_EMPLOYES, EMP_COLONNES);
   emp.setFrozenRows(1);
   emp.getRange(1, 1, 1, EMP_COLONNES.length).setFontWeight("bold").setBackground("#f4f1ea");
+  // Formats de cellule : dates en vrai format date.
+  emp.getRange("C2:C").setNumberFormat("yyyy-mm-dd hh:mm"); // Date de mise à jour
+  emp.getRange("I2:I").setNumberFormat("yyyy-mm-dd");       // Date de naissance
+  emp.getRange("P2:P").setNumberFormat("yyyy-mm-dd");       // Date d'entrée
+  emp.getRange("V2:V").setNumberFormat("yyyy-mm-dd");       // Expiration permis
 
   // ---------- Dashboard ----------
   var dash = ss.getSheetByName("Dashboard") || ss.insertSheet("Dashboard", 0);
